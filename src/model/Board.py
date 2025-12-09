@@ -1,4 +1,6 @@
-from . import Case, Color
+from .Case import Case
+from .Color import Color
+
 class Board:
     def __init__(self, width = 8, height = 8):
         self.width = width
@@ -28,6 +30,9 @@ class Board:
     def case_in_board(self, case : Case):
         return self.in_board(case.get_pos())
     
+    def get_cases(self) -> list:
+        return self.cases
+
     def get_Case(self, pos : tuple):
         return self.cases[pos[0]][pos[1]]
 

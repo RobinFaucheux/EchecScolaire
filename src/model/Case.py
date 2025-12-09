@@ -1,5 +1,6 @@
 from . import Color, Board
-from Pieces import Piece
+from .Pieces.Piece import Piece
+
 class Case:
     def __init__(self, pos : tuple, color : Color, board = Board, piece = None):
         self.pos = pos
@@ -23,6 +24,9 @@ class Case:
     
     def get_board(self) -> Board:
         return self.board
+    
+    def get_color(self) -> Color:
+        return self.color
 
     def contains_piece(self) -> bool:
         return self.piece is not None
