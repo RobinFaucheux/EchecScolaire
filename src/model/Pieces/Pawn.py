@@ -1,9 +1,10 @@
-from . import Piece
-from .. import Color, Case
+from .Piece import Piece
+from .. import Color, Case, Player
 
 class Pawn(Piece):
-    def __init__(self, color : Color, case : Case ):
-        super(color, case)
+    def __init__(self, color : Color, case : Case):
+        name = "pawn"
+        super().__init__(color, case, name)
         self.vectors = [(-1, -1), (-1, 0), (-1, 1)]
     
     

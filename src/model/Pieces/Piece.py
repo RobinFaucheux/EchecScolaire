@@ -1,10 +1,11 @@
 from .. import Color, Case
 
 class Piece:
-    def __init__(self, color : Color, case : Case ):
+    def __init__(self, color : Color, case : Case, name: str):
         self.color =  color
         self.case = case
         self._vectors = []
+        self.name = name
 
     def process_vectors(self) -> list:
         l = []
@@ -42,6 +43,9 @@ class Piece:
 
     def set_case(self, case : Case):
         self.case = case
+
+    def get_name(self) -> str:
+        return self.name
 
     def move(self, case : Case) -> bool:
         self.case.remove_piece()
