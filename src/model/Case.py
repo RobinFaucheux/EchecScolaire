@@ -23,3 +23,6 @@ class Case:
     
     def get_board(self) -> Board:
         return self.board
+
+    def contains_piece(self) -> bool:
+        return self.piece is not None
