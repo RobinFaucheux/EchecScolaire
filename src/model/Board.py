@@ -31,7 +31,7 @@ class Board:
             self.cases.append(l)
 
     def init_pieces(self):
-        # Pawns
+        
         for i in range(self.width):
             case = self.get_Case((1, i))
             pawn = Pawn(Color.WHITE, case)
@@ -42,63 +42,39 @@ class Board:
             pawn = Pawn(Color.BLACK, case)
             case.add_piece(pawn)
 
-        # Rock
-        tours = [
-            ((0, 0), Color.WHITE),
-            ((0, self.width - 1), Color.WHITE),
-            ((self.height - 1, 0), Color.BLACK),
-            ((self.height - 1, self.width - 1), Color.BLACK)
+        pieces = [
+            (Rock, [
+                (0, 0, Color.WHITE), 
+                (0, self.width - 1, Color.WHITE),
+                (self.height - 1, 0, Color.BLACK), 
+                (self.height - 1, self.width - 1, Color.BLACK)
+            ]),
+            (Knight, [
+                (0, 1, Color.WHITE), 
+                (0, self.width - 2, Color.WHITE),
+                (self.height - 1, 1, Color.BLACK), 
+                (self.height - 1, self.width - 2, Color.BLACK)
+            ]),
+            (Bishop, [
+                (0, 2, Color.WHITE), 
+                (0, self.width - 3, Color.WHITE),
+                (self.height - 1, 2, Color.BLACK), 
+                (self.height - 1, self.width - 3, Color.BLACK)
+            ]),
+            (Queen, [
+                (0, 3, Color.WHITE),
+                (self.height - 1, 3, Color.BLACK)
+            ]),
+            (King, [
+                (0, 4, Color.WHITE),
+                (self.height - 1, 4, Color.BLACK)
+            ])
         ]
-        for pos, color in tours:
-            case = self.get_Case(pos)
-            rock = Rock(color, case)
-            case.add_piece(rock)
-
-        # Knight
-        tours = [
-            ((0, 1), Color.WHITE),
-            ((0, self.width - 2), Color.WHITE),
-            ((self.height - 1, 1), Color.BLACK),
-            ((self.height - 1, self.width - 2), Color.BLACK)
-        ]
-        for pos, color in tours:
-            case = self.get_Case(pos)
-            knight = Knight(color, case)
-            case.add_piece(knight)
-
-        # Bishop
-        tours = [
-            ((0, 2), Color.WHITE),
-            ((0, self.width - 3), Color.WHITE),
-            ((self.height - 1, 2), Color.BLACK),
-            ((self.height - 1, self.width - 3), Color.BLACK)
-        ]
-        for pos, color in tours:
-            case = self.get_Case(pos)
-            bishop = Bishop(color, case)
-            case.add_piece(bishop)
-
-        # Queen
-        tours = [
-            ((0, 3), Color.WHITE),
-            ((self.height - 1, self.width - 5), Color.BLACK),
-        ]
-        for pos, color in tours:
-            case = self.get_Case(pos)
-            queen = Queen(color, case)
-            case.add_piece(queen)
-        
-        # King
-        tours = [
-            ((0, 4), Color.WHITE),
-            ((self.height - 1, self.width - 4), Color.BLACK),
-        ]
-        for pos, color in tours:
-            case = self.get_Case(pos)
-            king = King(color, case)
-            case.add_piece(king)
-
-
+        for clss, positions in pieces:
+            for x, y, color in positions:
+                case = self.get_Case((x, y))
+                piece = clss(color, case)
+                case.add_piece(piece)
 
     def in_board(self, pos : tuple) -> bool:
         return 0 < pos[0] < self.height and 0 < pos[1] < self.width
