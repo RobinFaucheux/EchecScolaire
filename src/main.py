@@ -1,33 +1,22 @@
 from model.Board import Board
+import constant as cons
 
 def plateau_terminal(board: Board):
-    BACKGROUND_WHITE = "\033[47m"
-    BACKGROUND_BLACK = "\033[40m"
-    RESET = "\033[0m"
-
-    WHITE_PAWN = "○"
-    BLACK_PAWN = "●"
-
     cases = board.get_cases()
     draw = []
     for row in reversed(cases):
         for case in row:
-
             piece = " "
-            if case.get_piece() != None:
-                if case.get_piece().get_name() == "pawn":
-                    if case.get_piece().get_color().name == "WHITE":
-                        piece = WHITE_PAWN
-                    else:
-                        piece = BLACK_PAWN
+            if case.get_piece() is not None:
+                piece_obj = case.get_piece()
+                key = (piece_obj.get_name(), piece_obj.get_color().name)
+                piece = cons.PIECE_SYMBOLS.get(key)
 
-        
             if case.get_color().name == "WHITE":
-                draw.append(BACKGROUND_WHITE + " " + piece + " " + RESET)
+                draw.append(cons.BACKGROUND_WHITE + " " + piece + " " + cons.RESET)
             else:
-                draw.append(BACKGROUND_BLACK + " " + piece + " " + RESET)
-
-            
+                draw.append(cons.BACKGROUND_BLACK + " " + piece + " " + cons.RESET)
+   
         draw.append("\n")
     print("".join(draw))
 

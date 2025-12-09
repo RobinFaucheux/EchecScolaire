@@ -1,5 +1,5 @@
 from .Piece import Piece
-from .. import Color, Case, Player
+from .. import Color, Case
 
 class Pawn(Piece):
     def __init__(self, color : Color, case : Case):
