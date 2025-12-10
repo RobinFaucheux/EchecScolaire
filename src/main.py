@@ -13,9 +13,9 @@ def plateau_terminal(board: Board):
                 piece = cons.PIECE_SYMBOLS.get(key)
 
             if case.get_color().name == "WHITE":
-                draw.append(cons.BACKGROUND_WHITE + " " + piece + " " + cons.RESET)
+                draw.append(cons.BACKGROUND_WHITE + cons.TEXTE_BLACK + " " + piece + " " + cons.RESET)
             else:
-                draw.append(cons.BACKGROUND_BLACK + " " + piece + " " + cons.RESET)
+                draw.append(cons.BACKGROUND_BLUE + cons.TEXTE_BLACK + " " + piece + " " + cons.RESET)
    
         draw.append("\n")
     print("".join(draw))
@@ -28,6 +28,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
