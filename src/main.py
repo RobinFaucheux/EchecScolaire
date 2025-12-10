@@ -1,4 +1,5 @@
 from model.Board import Board
+from db.db import open_connexion
 import constant as cons
 
 def plateau_terminal(board: Board):
@@ -27,4 +28,5 @@ def main():
     plateau_terminal(board)
 
 if __name__ == "__main__":
+    connexion=open_connexion()
     main()
