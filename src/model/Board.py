@@ -1,4 +1,5 @@
-from .Case import Case
+from __future__ import annotations  # <--- Magic line
+
 from .Color import Color
 from .Pieces.Pawn import Pawn
 from .Pieces.Rock import Rock
@@ -6,11 +7,19 @@ from .Pieces.Knight import Knight
 from .Pieces.Bishop import Bishop
 from .Pieces.Queen import Queen
 from .Pieces.King import King
+from .Case import Case
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .Game import Game
+    
 
 class Board:
-    def __init__(self, width = 8, height = 8):
+    def __init__(self, game : Game, width = 8, height = 8):
         self.width = width
         self.height = height
+        self.game = game
         self.cases = []
         self.init_board()
     
@@ -20,25 +29,25 @@ class Board:
             for j in range(self.width):
                 if (i%2 == 0):
                     if j%2==0:
-                        l.append(Case((i, j), Color.BLACK))
+                        l.append(Case((i, j), Color.BLACK, self))
                     else:
-                        l.append(Case((i, j), Color.WHITE))
+                        l.append(Case((i, j), Color.WHITE, self))
                 else:
                     if j%2==1:
-                        l.append(Case((i, j), Color.BLACK))
+                        l.append(Case((i, j), Color.BLACK, self))
                     else:
-                        l.append(Case((i, j), Color.WHITE))
+                        l.append(Case((i, j), Color.WHITE, self))
             self.cases.append(l)
 
     def init_pieces(self):
         
         for i in range(self.width):
-            case = self.get_Case((1, i))
+            case = self.get_case((1, i))
             pawn = Pawn(Color.WHITE, case)
             case.add_piece(pawn)
 
         for i in range(self.width):
-            case = self.get_Case((6, i))
+            case = self.get_case((6, i))
             pawn = Pawn(Color.BLACK, case)
             case.add_piece(pawn)
 
@@ -72,7 +81,7 @@ class Board:
         ]
         for clss, positions in pieces:
             for x, y, color in positions:
-                case = self.get_Case((x, y))
+                case = self.get_case((x, y))
                 piece = clss(color, case)
                 case.add_piece(piece)
 
@@ -85,8 +94,11 @@ class Board:
     def get_cases(self) -> list:
         return self.cases
 
-    def get_Case(self, pos : tuple):
+    def get_case(self, pos : tuple):
         return self.cases[pos[0]][pos[1]]
+
+    def get_Game(self) -> Game:
+        return self.game
 
     def move(self, start : Case, end : Case) -> bool:
         return start.get_piece().move(end)
