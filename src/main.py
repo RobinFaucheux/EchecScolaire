@@ -1,5 +1,5 @@
 from model import *
-from db.db import open_connexion
+import db.db as db
 import constant as cons
 
 def plateau_terminal(board: Board):
@@ -32,5 +32,11 @@ def main():
 
 
 if __name__ == "__main__":
-    connexion=open_connexion()
+    connexion = db.open_connexion()
+    if not db.database_already_initialized(connexion):
+        print("The database is empty, initialization...")
+        db.create_database(connexion)
+        print("Database initialized!")
+    else:
+        print("The database is already full")
     main()
