@@ -21,7 +21,7 @@ def plateau_terminal(board: Board):
         draw.append("\n")
     print("".join(draw))
 
-p = Player(1, "nigga", 1, [])
+p = Player(1, "a", 1, [])
 p1 = p
 g = Game(p, p1)
 def main():

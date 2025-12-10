@@ -10,7 +10,7 @@ class Piece:
         self.case = case
         self._vectors = vectors
         self.name = name
-        print(self.accessible_spots())
+        # print(self.accessible_spots())
 
     def process_vectors(self) -> list:
         l = []
@@ -57,10 +57,10 @@ class Piece:
         return self.name
 
     def move(self, case : Case) -> bool:
-        if case.get_pos() is self.accessible_spots():    
+        if case.get_pos() in self.accessible_spots():    
             self.case.remove_piece()
-            if case.get_piece!= None:
-                if type(case.get_piece()) == King:
+            if case.get_piece() != None:
+                if case.get_piece().get_name() == "king":
                     self.case.get_board().get_game().win()
                 case.get_piece().remove() # A UPGRADE
             case.add_piece(self)

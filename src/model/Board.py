@@ -86,7 +86,7 @@ class Board:
                 case.add_piece(piece)
 
     def in_board(self, pos : tuple) -> bool:
-        return 0 < pos[0] < self.height and 0 < pos[1] < self.width
+        return 0 <= pos[0] < self.height and 0 <= pos[1] < self.width
     
     def case_in_board(self, case : Case):
         return self.in_board(case.get_pos())

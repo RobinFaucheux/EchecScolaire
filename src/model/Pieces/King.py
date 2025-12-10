@@ -1,7 +1,7 @@
 from __future__ import annotations  # <--- Magic line
 from ..Color import Color
-from .Piece import Piece
 from typing import TYPE_CHECKING
+from .Piece import Piece
 
 if TYPE_CHECKING:
     from ..Case import Case
