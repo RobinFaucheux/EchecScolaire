@@ -1,6 +1,7 @@
 from model import *
-import db.db as db
+import db.init_db as db
 import constant as cons
+import menu
 
 def plateau_terminal(board: Board):
     cases = board.get_cases()
@@ -24,10 +25,13 @@ def plateau_terminal(board: Board):
 p = Player(1, "a", 1, [])
 p1 = p
 g = Game(p, p1)
+
 def main():
+    # players = menu.main_menu(connexion)
+    # g = Game(players[0], players[1])
+    # input("Press enter to start the game")
     board = Board(g)
     board.init_pieces()
-    
     plateau_terminal(board)
 
 
