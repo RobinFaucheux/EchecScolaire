@@ -8,5 +8,9 @@ if TYPE_CHECKING:
 class Pawn(Piece):
     def __init__(self, color : Color, case : Case):
         name = "pawn"
-        self._vectors = [(-1, -1), (-1, 0), (-1, 1)]
+        if color == Color.BLACK:
+            self._vectors = [(1, -1), (1, 0), (1, 1)]
+
+        else:
+            self._vectors = [(-1, -1), (-1, 0), (-1, 1)]
         super().__init__(color, case, name, self._vectors)
