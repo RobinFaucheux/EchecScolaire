@@ -5,3 +5,4 @@ class Knight(Piece):
     def __init__(self, color : Color, case : Case):
         name = "knight"
         super().__init__(color, case, name)
+        self._vectors = [(-2. -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]

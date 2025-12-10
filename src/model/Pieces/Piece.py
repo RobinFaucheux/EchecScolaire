@@ -1,4 +1,5 @@
-from .. import Color, Case
+from ..Color import Color
+from ..Case import Case
 
 class Piece:
     def __init__(self, color : Color, case : Case, name: str):
@@ -13,7 +14,7 @@ class Piece:
         current_pos = case.get_pos()
         for v in self.vectors:
             l.append((current_pos[0] + v[0], current_pos[1] + v[1]))
-        return v
+        return l
 
     def spots_in_map(self):
         l = []
@@ -31,6 +32,7 @@ class Piece:
                     l.append(case.get_pos())
             else:
                 l.append(case.get_pos())
+        return l
 
     def get_color(self) -> Color:
         return self.color
@@ -48,9 +50,10 @@ class Piece:
         return self.name
 
     def move(self, case : Case) -> bool:
-        self.case.remove_piece()
-        case.add_piece(self)
-        self.case = case
-        return True
+        if case.get_pos() is self.accessible_spots():    
+            self.case.remove_piece()
+            case.add_piece(self)
+            self.case = case
+            return True
 
     
