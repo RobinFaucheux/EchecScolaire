@@ -1,11 +1,11 @@
-from Player import Player
+from .Player import Player
+from .Board import Board
 
 class Game:
-
-    def __init__(self, victory: bool, turn: int, player1: Player, player2: Player):
+    def __init__(self, player1: Player, player2: Player):
         self.victory = False
         self.turn = 1
-        self.board = None
+        self.board = Board(self)
         self.joueurs = [player1, player2]
         
     def get_victory(self) -> bool:
@@ -19,3 +19,6 @@ class Game:
 
     def init_game(self) -> None:
         self.board.init_board()
+    
+    def win(self) -> None:
+        self.victory = True

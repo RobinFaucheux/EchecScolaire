@@ -1,4 +1,4 @@
-from model.Board import Board
+from model import *
 from db.db import open_connexion
 import constant as cons
 
@@ -21,11 +21,15 @@ def plateau_terminal(board: Board):
         draw.append("\n")
     print("".join(draw))
 
+p = Player(1, "nigga", 1, [])
+p1 = p
+g = Game(p, p1)
 def main():
-    board = Board()
+    board = Board(g)
     board.init_pieces()
     
     plateau_terminal(board)
+
 
 if __name__ == "__main__":
     connexion=open_connexion()

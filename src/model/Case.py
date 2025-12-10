@@ -1,8 +1,15 @@
-from . import Color, Board
-from .Pieces.Piece import Piece
+from __future__ import annotations  # <--- Magic line
 
+from .Color import Color
+from .Pieces import Piece
+
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .Board import Board
 class Case:
-    def __init__(self, pos : tuple, color : Color, board = Board, piece = None):
+    def __init__(self, pos : tuple, color : Color, board : Board, piece = None):
         self.pos = pos
         self.color = color
         self.piece = piece
