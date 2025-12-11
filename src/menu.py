@@ -16,7 +16,6 @@ def register_user(connexion):
     player_id = db.register_player(connexion, username, password)
     print(f"\nUser '{username}' successfully created, your ID is '{player_id}'")
     input()
-    login_player(connexion)
 
 
 def login_player(connexion):

@@ -27,9 +27,9 @@ p1 = p
 g = Game(p, p1)
 
 def main():
-    # players = menu.main_menu(connexion)
-    # g = Game(players[0], players[1])
-    # input("Press enter to start the game")
+    players = menu.main_menu(connexion)
+    g = Game(players[0], players[1])
+    input("Press enter to start the game")
     board = Board(g)
     board.init_pieces()
     plateau_terminal(board)
