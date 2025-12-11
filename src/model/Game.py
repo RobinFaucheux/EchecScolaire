@@ -2,14 +2,21 @@ from .Player import Player
 from .Board import Board
 
 class Game:
-    def __init__(self, player1: Player, player2: Player):
-        self.victory = False
+    def __init__(self, idG: int, player1: Player, player2: Player):
+        self.idG = idG
+        self.finish = False
         self.turn = 1
         self.board = Board(self)
         self.joueurs = [player1, player2]
-        
-    def get_victory(self) -> bool:
-        return self.victory
+
+    def get_idG(self) -> int:
+        return self.idG  
+    
+    def get_finish(self) -> bool:
+        return self.finish
+    
+    def set_finish(self):
+        self.finish = True
 
     def get_turn(self) -> int:
         return self.turn

@@ -18,12 +18,13 @@ def register_user(connexion):
     input()
 
 
-def login_player(connexion):
+def login_player(connexion, players):
     print("\n-- Log in --")
 
     id = input("Enter your ID: ").strip()
-    while not id:
-        print("id cannot be empty.")
+    id_other = (players[0].get_id() if players else "rien")
+    while not id or id == str(id_other):
+        print("id cannot be empty or same ID that player 1.")
         id = input("Enter your id: ").strip()
 
     player = db.collect_player(connexion, id)
@@ -54,7 +55,7 @@ def main_menu(connexion):
                 choice = input("Please choose an option (1-3): ").strip()
 
             if choice == "1":
-                player = login_player(connexion)
+                player = login_player(connexion, players)
                 if player:
                     players.append(player)        
                     input()

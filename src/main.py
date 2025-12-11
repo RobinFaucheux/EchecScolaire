@@ -1,5 +1,6 @@
 from model import *
 import db.init_db as db
+import db.queries as queries
 import constant as cons
 import menu
 
@@ -24,15 +25,24 @@ def plateau_terminal(board: Board):
 
 p = Player(1, "a", 1, [])
 p1 = p
-g = Game(p, p1)
+g = Game(1, p, p1)
 
 def main():
-    players = menu.main_menu(connexion)
-    g = Game(players[0], players[1])
+    # players = menu.main_menu(connexion)
+    # id_game = queries.save_game(connexion)
+    # g = Game(id_game, players[0], players[1])
     input("Press enter to start the game")
     board = Board(g)
     board.init_pieces()
     plateau_terminal(board)
+
+    # input("appuie pour terminer la partie")
+    # g.set_finish()
+    if g.get_finish():
+        queries.save_final_game(connexion, id_game, players[0].get_id(), False)
+        queries.save_final_game(connexion, id_game, players[1].get_id(), True)
+        print("Partie terminé ")
+
 
 
 if __name__ == "__main__":
