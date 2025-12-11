@@ -106,13 +106,12 @@ class Board:
             y = int(chain[1:])
             letters = 'abcdefghijklmnopqrstuvwxyz'
 
-            y = self.height - y
-
             x = letters.index(x)
             # print(x, y)
             return y,x
         except:
-            print("Wrong coordinates")
+            # return None to signal invalid coordinates to caller
+            return None
 
     def move(self, start : Case, end : Case) -> bool:
         return start.get_piece().move(end)
