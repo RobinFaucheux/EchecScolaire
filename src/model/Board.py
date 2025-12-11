@@ -94,11 +94,25 @@ class Board:
     def get_cases(self) -> list:
         return self.cases
 
-    def get_case(self, pos : tuple):
+    def get_case(self, pos : tuple) -> Case:
         return self.cases[pos[0]][pos[1]]
 
     def get_Game(self) -> Game:
         return self.game
+
+    def translate(self, chain : str):
+        try:
+            x = chain[0]
+            y = int(chain[1:])
+            letters = 'abcdefghijklmnopqrstuvwxyz'
+
+            y = self.height - y
+
+            x = letters.index(x)
+            # print(x, y)
+            return y,x
+        except:
+            print("Wrong coordinates")
 
     def move(self, start : Case, end : Case) -> bool:
         return start.get_piece().move(end)
