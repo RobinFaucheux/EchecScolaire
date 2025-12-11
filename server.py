@@ -30,6 +30,7 @@ class Session:
         self.socket=sock
         self.file= sock.makefile(mode="rw")
         self.game=Game("Player1","Player2")
+        self.turn=1
 
     def mainSession(self):
         while True:
@@ -43,19 +44,22 @@ class Session:
             print(line1)
             line2 = self.game.board.translate(line[2:4])
             print(line2)
-
-            if line1 is None or line2 is None:
-                self.file.write("Coordonnées incorrectes\n")
-                self.file.flush()
-                continue
-
-            if self.game.board.in_board(line1) and self.game.board.in_board(line2):
-                self.file.write("Le coup a bien été reçu\n")
-                self.file.flush()
-                print(f"Le joueur a joué le coup {line}")
-            else:
-                self.file.write("Le coup demandé n'est pas valide\n")
-                self.file.flush()
+            try:
+                if self.game.board.in_board(line1) and self.game.board.in_board(line2):
+                    self.file.write("Le coup a bien été reçu\n")
+                    self.file.flush()
+                    print(f"Le joueur {self.game.joueurs[(self.turn+1)%2]} a joué le coup {line}")
+                    self.turn += 1
+                else:
+                    self.file.write(f"Le coup {line} n'est pas valide\n")
+                    self.file.flush()
+            except Exception as e:
+                print("Erreur lors du traitement du coup:", e)
+                try:
+                    self.file.write(f"Erreur le coup {line} est invalide\n")
+                    self.file.flush()
+                except Exception:
+                    pass
         
         try:
             self.file.close()
