@@ -27,11 +27,31 @@ p1 = p
 g = Game(p, p1)
 
 def main():
-    players = menu.main_menu(connexion)
-    g = Game(players[0], players[1])
+    # players = menu.main_menu(connexion)
+    # g = Game(players[0], players[1])
+    g = Game(p, p1)
     input("Press enter to start the game")
     board = Board(g)
     board.init_pieces()
+
+    print(board.translate('a2'))
+
+    board.get_case(board.translate('a2')).get_piece().move(board.get_case(board.translate('a3')))
+    
+    board.get_case(board.translate('b2')).get_piece().move(board.get_case(board.translate('b3')))
+
+    for coord in board.get_case(board.translate('b2')).get_piece().accessible_spots():
+        print(board.roundtrip(coord))
+
+    # print("name")
+    # print(type(board.get_case(board.translate('a2')).get_piece()))
+    
+    # print("case")
+    # print(board.get_case(board.translate('a2')).get_piece().get_case())
+    
+    # print("case2")
+    # print(board.get_case(board.translate('a2')))
+    
     plateau_terminal(board)
 
 

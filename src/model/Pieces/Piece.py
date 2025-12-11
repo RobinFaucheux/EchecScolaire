@@ -65,6 +65,7 @@ class Piece:
                 case.get_piece().remove() # A UPGRADE
             case.add_piece(self)
             self.case = case
+            # print(self.case)
             return True
 
     

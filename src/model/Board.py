@@ -113,6 +113,22 @@ class Board:
             return y,x
         except:
             print("Wrong coordinates")
+        
+    def roundtrip(self, pos : tuple):
+        try:
+            y = pos[0] 
+            x = pos[1]
+
+            letters = 'abcdefghijklmnopqrstuvwxyz'
+
+            y = self.height - y
+
+            x = letters[x]
+
+            return str(x) + str(y)
+
+        except:
+            print("Wrong coordinates")
 
     def move(self, start : Case, end : Case) -> bool:
         return start.get_piece().move(end)
