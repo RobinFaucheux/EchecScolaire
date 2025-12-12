@@ -1,5 +1,6 @@
 import sqlalchemy
 from datetime import date
+from model import *
 
 def register_player(connexion, username, password):
     stmt = sqlalchemy.text("insert into PLAYER(pseudo, passwd) VALUES (:pseudo, :passwd) returning idP")
@@ -22,10 +23,14 @@ def save_game(connexion):
     row = res.fetchone()
     return row[0] if row else None
 
-def save_final_game(connexion, idG: int, idP: int, won: bool):
+def save_final_game(connexion, idG: int, player: Player, won: str):
     stmt1 = sqlalchemy.text("insert into PLAY(idG, idP, won) VALUES (:idG, :idP, :won)")
-    connexion.execute(stmt1, {"idG": idG, "idP": idP, "won": won})
+    connexion.execute(stmt1, {"idG": idG, "idP": player.get_id(), "won": won})
     connexion.commit()
     stmt2 = sqlalchemy.text("update GAME set stateG = :stateG where idG = :idG")
     connexion.execute(stmt2, {"stateG": "finished", "idG": idG})
+    connexion.commit()
+    
+    stmt3 = sqlalchemy.text("update PLAYER set elo = :elo where idP = :idP")
+    connexion.execute(stmt3, {"elo": player.get_elo(),"idP": player.get_id()})
     connexion.commit()

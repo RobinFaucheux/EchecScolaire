@@ -31,13 +31,13 @@ def login_player(connexion, players):
     player_obj = None
     if player:
         print(f"\nWelcome back, {player[1]}! Your ELO: {player[3]}")
-        player_obj = Player(player[0], player[1], player[2], [])
+        player_obj = Player(player[0], player[1], player[3], [])
     else:
         print("\nInvalid ID\n")
     return player_obj
 
 
-def main_menu(connexion):
+def main_menu(connexion) -> list[Player]:
     players = []
     print("======================================")
     print("       Welcome to ChessSchool")

@@ -15,7 +15,7 @@ create table GAME (
 create table PLAY (
     idP int,
     idG int,
-    won boolean,
+    won ENUM('won', 'equality', 'loose') default null,
     primary key(idP, idG),
     foreign key(idP) references PLAYER(idP),
     foreign key(idG) references GAME(idG)
