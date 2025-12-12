@@ -9,11 +9,19 @@ class Pawn(Piece):
     def __init__(self, color : Color, case : Case):
         name = "pawn"
         if color == Color.BLACK:
-            self._vectors = [(-1, -1), (-1, 0), (-1, 1)]
+            self._vectors = [(-1, -1), (-1, 0), (-1, 1), (-2, 0)]
         else:
-            self._vectors = [(1, -1), (1, 0), (1, 1)]
+            self._vectors = [(1, -1), (1, 0), (1, 1), (2, 0)]
         super().__init__(color, case, name, self._vectors)
         # print(self.accessible_spots())
         # if len(self.accessible_spots()) > 0:
         #     self.move(self.case.get_board().get_case(self.accessible_spots()[0]))
         print(self.case)
+    
+    def process_vectors(self):
+        if self.color == Color.BLACK and self.case.get_pos()[0] != 6:
+            self._vectors.remove((-2, 0))
+            
+        if self.color == Color.WHITE and self.case.get_pos()[0] != 1:
+            self._vectors.remove((2, 0))
+        return super().process_vectors()

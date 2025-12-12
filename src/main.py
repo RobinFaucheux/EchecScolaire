@@ -38,12 +38,19 @@ def main():
 
     print(board.translate('a2'))
 
+    print(board.get_case(board.translate('a2')))
+
     board.get_case(board.translate('a2')).get_piece().move(board.get_case(board.translate('a3')))
     
+
+    for v in board.get_case(board.translate('b2')).get_piece().accessible_spots():
+        print(board.roundtrip(v))
+
     board.get_case(board.translate('b2')).get_piece().move(board.get_case(board.translate('b3')))
 
-    for coord in board.get_case(board.translate('b2')).get_piece().accessible_spots():
-        print(board.roundtrip(coord))
+    for v in board.get_case(board.translate('b3')).get_piece().accessible_spots():
+        print(board.roundtrip(v))
+
 
     # print("name")
     # print(type(board.get_case(board.translate('a2')).get_piece()))

@@ -33,12 +33,12 @@ class Piece:
     def accessible_spots(self) -> list:
         l = []
         for v in self.spots_in_map():
-            case = self.case.get_board().get_case(v)
-            if case is not None:
-                if case.get_color() != self.color:
-                    l.append(case.get_pos())
+            piece = self.case.get_board().get_case(v).get_piece()
+            if piece is not None:
+                if piece.get_color() != self.color:
+                    l.append(v)
             else:
-                l.append(case.get_pos())
+                l.append(v)
         return l
 
     def get_color(self) -> Color:
