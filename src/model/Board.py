@@ -103,10 +103,9 @@ class Board:
     def translate(self, chain : str):
         try:
             x = chain[0]
-            y = int(chain[1:])
+            y = int(chain[1:]) - 1
             letters = 'abcdefghijklmnopqrstuvwxyz'
 
-            y = self.height - y
 
             x = letters.index(x)
             # print(x, y)
@@ -116,12 +115,10 @@ class Board:
         
     def roundtrip(self, pos : tuple):
         try:
-            y = pos[0] 
+            y = pos[0] + 1
             x = pos[1]
 
             letters = 'abcdefghijklmnopqrstuvwxyz'
-
-            y = self.height - y
 
             x = letters[x]
 

@@ -36,15 +36,14 @@ def main():
     board = Board(g)
     board.init_pieces()
 
-    # print(board.translate('a2'))
+    print(board.get_case(board.translate('a2')))
 
-    # board.get_case(board.translate('a2')).get_piece().move(board.get_case(board.translate('a3')))
-    
-    # board.get_case(board.translate('b2')).get_piece().move(board.get_case(board.translate('b3')))
+    board.get_case(board.translate('a2')).get_piece().move(board.get_case(board.translate('a3')))
+    board.get_case(board.translate('b2')).get_piece().move(board.get_case(board.translate('b3')))
 
-    # for coord in board.get_case(board.translate('b2')).get_piece().accessible_spots():
-    #     print(board.roundtrip(coord))
-    
+    # for v in board.get_case(board.translate('b2')).get_piece().accessible_spots():
+    #     print(board.roundtrip(v))
+
     plateau_terminal(board)
 
     input("Press to finish the game")
