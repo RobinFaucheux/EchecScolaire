@@ -18,7 +18,7 @@ class Pawn(Piece):
         #     self.move(self.case.get_board().get_case(self.accessible_spots()[0]))
         print(self.case)
     
-    def process_vectors(self):
+    def process_vectors(self) -> list[tuple[int, int]]:
         if self.color == Color.BLACK and self.case.get_pos()[0] != 6:
             self._vectors.remove((-2, 0))
             

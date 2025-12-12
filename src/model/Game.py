@@ -7,6 +7,7 @@ class Game:
         self.finish = False
         self.turn = 1
         self.board = Board(self)
+        self.board.init_pieces()
         self.joueurs = [player1, player2]
 
     def get_idG(self) -> int:
@@ -15,6 +16,9 @@ class Game:
     def get_finish(self) -> bool:
         return self.finish
     
+    def get_board(self) -> Board:
+        return self.board
+
     def set_finish(self):
         self.finish = True
 
@@ -29,3 +33,32 @@ class Game:
     
     def win(self) -> None:
         self.victory = True
+    
+    def allowed_moves(self, position : str) -> list[str]:
+        c = self.board.get_case(self.board.translate(position))
+        piece = c.get_piece()
+        if piece is not None:
+            l = piece.accessible_spots()
+            coords = []
+            for v in l:
+                coords.append(self.board.roundtrip(v))
+            return coords
+        return None
+    
+    def allowed_moves_graphic(self, position : str):
+        c = self.board.get_case(self.board.translate(position))
+        piece = c.get_piece()
+        if piece is not None:
+            l = piece.accessible_spots()
+            coords = []
+            for v in l:
+                coords.append(v)
+            self.board.plateau_terminal(coords)
+        
+    
+
+    def move(self, start : str, end : str):
+        cstart = self.board.get_case(self.board.translate(start))
+        cend = self.board.get_case(self.board.translate(end))
+
+        self.board.move(cstart, cend)

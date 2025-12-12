@@ -12,7 +12,7 @@ class Piece:
         self.name = name
         # print(self.accessible_spots())
 
-    def process_vectors(self) -> list:
+    def process_vectors(self) -> list[tuple[int, int]]:
         l = []
         case = self.case
         current_pos = case.get_pos()
@@ -23,14 +23,14 @@ class Piece:
     def remove(self) -> None:
         self.case = None
     
-    def spots_in_map(self):
+    def spots_in_map(self) -> list[tuple[int, int]]:
         l = []
         for v in self.process_vectors():
             if self.get_case().get_board().in_board(v):
                 l.append(v)
         return l
 
-    def accessible_spots(self) -> list:
+    def accessible_spots(self) -> list[tuple[int, int]]:
         l = []
         for v in self.spots_in_map():
             piece = self.case.get_board().get_case(v).get_piece()

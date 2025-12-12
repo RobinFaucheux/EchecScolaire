@@ -1,7 +1,7 @@
 from model import *
 import db.init_db as db
 import db.queries as queries
-import constant as cons
+import model.constant as cons
 import menu
 
 def plateau_terminal(board: Board):
@@ -27,6 +27,9 @@ p = Player(1, "a", 1, [])
 p1 = p
 g = Game(1, p, p1)
 
+l = [p, p1]
+
+
 def main():
     # players = menu.main_menu(connexion)
     # id_game = queries.save_game(connexion)
@@ -36,32 +39,15 @@ def main():
     board = Board(g)
     board.init_pieces()
 
-    print(board.translate('a2'))
-
-    print(board.get_case(board.translate('a2')))
-
-    board.get_case(board.translate('a2')).get_piece().move(board.get_case(board.translate('a3')))
+    g.move('a2', 'a4')
+    g.move('b2', 'b3')
+    g.move('c1', 'a3')
     
+    g.move('a3', 'e7')
 
-    for v in board.get_case(board.translate('b2')).get_piece().accessible_spots():
-        print(board.roundtrip(v))
+    print(g.allowed_moves_graphic('e7'))
 
-    board.get_case(board.translate('b2')).get_piece().move(board.get_case(board.translate('b3')))
-
-    for v in board.get_case(board.translate('b3')).get_piece().accessible_spots():
-        print(board.roundtrip(v))
-
-
-    # print("name")
-    # print(type(board.get_case(board.translate('a2')).get_piece()))
-    
-    # print("case")
-    # print(board.get_case(board.translate('a2')).get_piece().get_case())
-    
-    # print("case2")
-    # print(board.get_case(board.translate('a2')))
-    
-    plateau_terminal(board)
+    plateau_terminal(g.get_board())
 
     # input("appuie pour terminer la partie")
     # g.set_finish()

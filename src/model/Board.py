@@ -8,6 +8,8 @@ from .Pieces.Bishop import Bishop
 from .Pieces.Queen import Queen
 from .Pieces.King import King
 from .Case import Case
+from .constant import * 
+
 
 from typing import TYPE_CHECKING
 
@@ -88,10 +90,10 @@ class Board:
     def in_board(self, pos : tuple) -> bool:
         return 0 <= pos[0] < self.height and 0 <= pos[1] < self.width
     
-    def case_in_board(self, case : Case):
+    def case_in_board(self, case : Case) -> bool:
         return self.in_board(case.get_pos())
     
-    def get_cases(self) -> list:
+    def get_cases(self) -> list[Case]:
         return self.cases
 
     def get_case(self, pos : tuple) -> Case:
@@ -100,7 +102,7 @@ class Board:
     def get_Game(self) -> Game:
         return self.game
 
-    def translate(self, chain : str):
+    def translate(self, chain : str) -> tuple[int, int]:
         try:
             x = chain[0]
             y = int(chain[1:]) - 1
@@ -113,7 +115,7 @@ class Board:
         except:
             print("Wrong coordinates")
         
-    def roundtrip(self, pos : tuple):
+    def roundtrip(self, pos : tuple) -> str:
         try:
             y = pos[0] + 1
             x = pos[1]
@@ -129,3 +131,24 @@ class Board:
 
     def move(self, start : Case, end : Case) -> bool:
         return start.get_piece().move(end)
+    
+    def plateau_terminal(self, green_cases : list[tuple[int, int]] = []):
+        cases = self.get_cases()
+        draw = []
+        for row in reversed(cases):
+            for case in row:
+                piece = " "
+                if case.get_piece() is not None:
+                    piece_obj = case.get_piece()
+                    key = (piece_obj.get_name(), piece_obj.get_color().name)
+                    piece = PIECE_SYMBOLS.get(key)
+                if case.get_pos() in green_cases:
+                    draw.append(BACKGROUND_GREEN + TEXTE_BLACK + " " + piece + " " + RESET)
+                else:
+                    if case.get_color().name == "WHITE":
+                        draw.append(BACKGROUND_WHITE + TEXTE_BLACK + " " + piece + " " + RESET)
+                    else:
+                        draw.append(BACKGROUND_BLUE + TEXTE_BLACK + " " + piece + " " + RESET)
+    
+            draw.append("\n")
+        print("".join(draw))
