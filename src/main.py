@@ -31,10 +31,10 @@ l = [p, p1]
 
 
 def main():
-    # players = menu.main_menu(connexion)
-    # id_game = queries.save_game(connexion)
-    # g = Game(id_game, players[0], players[1])
-    g = Game(1, p, p1)
+    players = menu.main_menu(connexion)
+    id_game = queries.save_game(connexion)
+    g = Game(id_game, players[0], players[1])
+    # g = Game(1, p, p1)
     input("Press enter to start the game")
     board = Board(g)
     board.init_pieces()
@@ -49,12 +49,17 @@ def main():
 
     plateau_terminal(g.get_board())
 
-    # input("appuie pour terminer la partie")
-    # g.set_finish()
+    input("Press to finish the game")
+    g.set_finish()
     if g.get_finish():
-        # queries.save_final_game(connexion, id_game, players[0].get_id(), False)
-        #queries.save_final_game(connexion, id_game, players[1].get_id(), True)
-        print("Partie terminé ")
+        old_elo_player1 = players[0].get_elo()
+        old_elo_player2 = players[1].get_elo()
+        print("type de elo : ", type(old_elo_player1))
+        players[0].calculate_elo(old_elo_player2, 'won')
+        players[1].calculate_elo(old_elo_player1, 'loose')
+        queries.save_final_game(connexion, id_game, players[0], 'won')
+        queries.save_final_game(connexion, id_game, players[1], 'loose')
+        print("Game over!")
 
 
 
