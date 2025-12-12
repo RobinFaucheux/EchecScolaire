@@ -25,7 +25,7 @@ def save_game(connexion : sqlalchemy.Connection) -> int:
     row = res.fetchone()
     return row[0] if row else None
 
-def save_final_game(connexion, idG: int, player: Player, won: str):
+def save_final_game(connexion : sqlalchemy.Connection, idG: int, player: Player, won: str):
     stmt1 = sqlalchemy.text("insert into PLAY(idG, idP, won) VALUES (:idG, :idP, :won)")
     connexion.execute(stmt1, {"idG": idG, "idP": player.get_id(), "won": won})
     connexion.commit()
