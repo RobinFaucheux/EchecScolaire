@@ -4,24 +4,8 @@ import db.queries as queries
 import model.constant as cons
 import menu
 
-def plateau_terminal(board: Board):
-    cases = board.get_cases()
-    draw = []
-    for row in reversed(cases):
-        for case in row:
-            piece = " "
-            if case.get_piece() is not None:
-                piece_obj = case.get_piece()
-                key = (piece_obj.get_name(), piece_obj.get_color().name)
-                piece = cons.PIECE_SYMBOLS.get(key)
-
-            if case.get_color().name == "WHITE":
-                draw.append(cons.BACKGROUND_WHITE + cons.TEXTE_BLACK + " " + piece + " " + cons.RESET)
-            else:
-                draw.append(cons.BACKGROUND_BLUE + cons.TEXTE_BLACK + " " + piece + " " + cons.RESET)
-   
-        draw.append("\n")
-    print("".join(draw))
+from colorama import init
+init()
 
 p = Player(1, "a", 1, [])
 p1 = p
@@ -47,7 +31,7 @@ def main():
 
     print(g.allowed_moves_graphic('e7'))
 
-    plateau_terminal(g.get_board())
+    board.plateau_terminal()
 
     input("Press to finish the game")
     g.set_finish()
