@@ -24,7 +24,7 @@ def main():
 
     board = g.get_board()
 
-    # while not g.set_finish():
+    # while not g.get_finish():
     #     game.play_turn(connexion, board)
 
     board.plateau_terminal()

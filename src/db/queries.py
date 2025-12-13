@@ -26,6 +26,7 @@ def save_game(connexion : sqlalchemy.Connection) -> int:
     return row[0] if row else None
 
 def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, player: Player, won: str):
+    final_duration = ((1 * 60 - game.get_time_white()) + (1 * 60 - game.get_time_black()))
     if game.get_joueur(0).get_id() == player.get_id():
         player_color = "WHITE"
     else:
@@ -34,8 +35,8 @@ def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, pla
     stmt1 = sqlalchemy.text("insert into PLAY(idG, idP, won, color) VALUES (:idG, :idP, :won, :color)")
     connexion.execute(stmt1, {"idG": idG, "idP": player.get_id(), "won": won, "color": player_color})
     connexion.commit()
-    stmt2 = sqlalchemy.text("update GAME set stateG = :stateG where idG = :idG")
-    connexion.execute(stmt2, {"stateG": "finished", "idG": idG})
+    stmt2 = sqlalchemy.text("update GAME set stateG = :stateG, duration = :duration  where idG = :idG")
+    connexion.execute(stmt2, {"stateG": "finished", "idG": idG, "duration": final_duration})
     connexion.commit()
     
     stmt3 = sqlalchemy.text("update PLAYER set elo = :elo where idP = :idP")

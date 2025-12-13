@@ -2,17 +2,23 @@ from model import *
 import db.queries as queries
 import sqlalchemy
 
+def format_time(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    return f"{seconds // 60:02}:{seconds % 60:02}"
+
 def play_turn(connexion: sqlalchemy.Connection, board: Board):
     game = board.get_Game()
-    if game.get_turn() % 2 == 0:
-        pos = 1
-        player_color = "BLACK"
-    else:
+    player_color = game.current_color()
+    if player_color == "WHITE":
         pos = 0
-        player_color = "WHITE"
+    else:
+        pos = 1
     player = game.get_joueur(pos)
     print(f"\nTurn {game.get_turn()} - Player {player.get_pseudo()}")
-    
+
+    print(f"White time: {format_time(game.time_white)}")
+    print(f"Black time: {format_time(game.time_black)}")
+
     board.plateau_terminal()
     while True:
         piece_to_be_moved = input("Enter the starting square (example: a2): ").lower()
@@ -40,7 +46,6 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
             print("This is not your piece!")
             continue
 
-        
         print(game.allowed_moves_graphic(piece_to_be_moved))
         while True:
         
@@ -66,6 +71,10 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
             if not reussi:
                 print("Movement not possible, please choose a green box.")
                 continue
+            game.update_clock()
+            if game.get_time_black() == 0 or game.get_time_white() == 0:
+                break
+
             print(f"{player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}")
             queries.save_coup(connexion, game.get_idG(), game.get_turn(), final_start, final_end)
             game.set_turn(game.get_turn() + 1)
