@@ -34,24 +34,24 @@ class Piece:
 
         coords = self.case.get_pos()
         
-        l_vect = []
-        for vector in l_origin:
-            l_vect.append((vector[0] - coords[0], vector[1] - coords[1]))
+        l_vect = {}
+        for coo in l_origin:
+            vect = (coo[0] - coords[0], coo[1] - coords[1])
+            l_vect[coo] = vect
 
-        l_coords = []
-        for v in l_vect:
-            piece = self.case.get_board().get_case(v).get_piece()
+        
+        print(l_vect)
+        l_coords = l_origin.copy()
+        for coo, vect in l_vect.items():
+            piece = self.case.get_board().get_case(coo).get_piece()
             if piece is not None:
                 pos = piece.get_case().get_pos()
-                for ve in l_vect:
-                    if pos[0] * ve[0] >0 and pos[1] * ve[1] >0:
-                        dist_v = (abs(coords[0] - v[0]),abs( coords[1] - v[1]))
-                        dist_ve = (abs(coords[0] - ve[0]), abs(coords[1] - ve[1]))
-                        if dist_v[0] <= dist_ve[0] and dist_v[1] <= dist_ve[1] and v != ve:
-                            l_vect.remove(ve)
-        
-        for vector in l_vect:
-            l_coords.append((coords[0] + vector[0], coords[1] + vector[1]))
+                for c, ve in l_vect.items():
+                    if vect[0] * ve[0] >=0 and vect[1] * ve[1] >=0 and c in l_coords:
+                        dist_v = (abs(vect[0]),abs(vect[1]))
+                        dist_ve = (abs(ve[0]), abs(ve[1]))
+                        if (dist_v[0] <= dist_ve[0] and dist_v[1] <= dist_ve[1] and vect != ve):
+                            l_coords.remove(c)
         print(l_coords)
         return l_coords 
 
