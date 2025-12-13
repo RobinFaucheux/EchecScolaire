@@ -32,20 +32,29 @@ class Piece:
 
     def remove_lines_after_piece(self):
         l_origin = self.spots_in_map()
-        
+
         coords = self.case.get_pos()
-        for v in l_origin:
+        
+        l_vect = []
+        for vector in l_origin:
+            l_vect.append((vector[0] - coords[0], vector[1] - coords[1]))
+
+        l_coords = []
+        for v in l_vect:
             piece = self.case.get_board().get_case(v).get_piece()
             if piece is not None:
                 pos = piece.get_case().get_pos()
-                for ve in l_origin:
+                for ve in l_vect:
                     if pos[0] * ve[0] >0 and pos[1] * ve[1] >0:
                         dist_v = (abs(coords[0] - v[0]),abs( coords[1] - v[1]))
                         dist_ve = (abs(coords[0] - ve[0]), abs(coords[1] - ve[1]))
                         if dist_v[0] <= dist_ve[0] and dist_v[1] <= dist_ve[1] and v != ve:
-                            l_origin.remove(ve)
-        print(l_origin)
-        return l_origin 
+                            l_vect.remove(ve)
+        
+        for vector in l_vect:
+            l_coords.append((coords[0] + vector[0], coords[1] + vector[1]))
+        print(l_coords)
+        return l_coords 
 
     def accessible_spots(self) -> list[tuple[int, int]]:
         l = []
