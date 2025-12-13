@@ -8,5 +8,5 @@ if TYPE_CHECKING:
 class Knight(Piece):
     def __init__(self, color : Color, case : Case):
         name = "knight"
-        self._vectors = [(-2 -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+        self._vectors = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
         super().__init__(color, case, name, self._vectors)
