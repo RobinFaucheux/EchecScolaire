@@ -10,7 +10,6 @@ class Piece:
         self.case = case
         self._vectors = vectors
         self.name = name
-        # print(self.accessible_spots())
 
     def process_vectors(self) -> list[tuple[int, int]]:
         l = []
@@ -44,7 +43,6 @@ class Piece:
                         dist_ve = (abs(coords[0] - ve[0]), abs(coords[1] - ve[1]))
                         if dist_v[0] <= dist_ve[0] and dist_v[1] <= dist_ve[1] and v != ve:
                             l_origin.remove(ve)
-        print(l_origin)
         return l_origin 
 
     def accessible_spots(self) -> list[tuple[int, int]]:

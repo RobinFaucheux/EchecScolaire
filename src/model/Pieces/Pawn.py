@@ -13,10 +13,6 @@ class Pawn(Piece):
         else:
             self._vectors = [(1, -1), (1, 0), (1, 1), (2, 0)]
         super().__init__(color, case, name, self._vectors)
-        # print(self.accessible_spots())
-        # if len(self.accessible_spots()) > 0:
-        #     self.move(self.case.get_board().get_case(self.accessible_spots()[0]))
-        print(self.case)
     
     def process_vectors(self) -> list[tuple[int, int]]:
         if self.color == Color.BLACK and self.case.get_pos()[0] != 6:

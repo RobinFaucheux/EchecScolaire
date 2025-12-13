@@ -20,3 +20,11 @@ create table PLAY (
     foreign key(idP) references PLAYER(idP),
     foreign key(idG) references GAME(idG)
 );
+
+create table COUP (
+    idG int,
+    turn int,
+    coup varchar(10),
+    primary key(idG, turn),
+    foreign key(idG) references GAME(idG)
+);

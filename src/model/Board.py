@@ -110,7 +110,6 @@ class Board:
 
 
             x = letters.index(x)
-            # print(x, y)
             return y,x
         except:
             print("Wrong coordinates")

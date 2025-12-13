@@ -1,6 +1,8 @@
 from model import * 
+import db.queries as queries
+import sqlalchemy
 
-def play_turn(board: Board):
+def play_turn(connexion: sqlalchemy.Connection, board: Board):
     game = board.get_Game()
     if game.get_turn() % 2 == 0:
         pos = 1
@@ -65,6 +67,7 @@ def play_turn(board: Board):
                 print("Movement not possible, please choose a green box.")
                 continue
             print(f"{player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}")
+            queries.save_coup(connexion, game.get_idG(), game.get_turn(), final_start, final_end)
             game.set_turn(game.get_turn() + 1)
 
             board.plateau_terminal()

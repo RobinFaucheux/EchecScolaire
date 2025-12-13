@@ -36,3 +36,9 @@ def save_final_game(connexion : sqlalchemy.Connection, idG: int, player: Player,
     stmt3 = sqlalchemy.text("update PLAYER set elo = :elo where idP = :idP")
     connexion.execute(stmt3, {"elo": player.get_elo(),"idP": player.get_id()})
     connexion.commit()
+
+def save_coup(connexion : sqlalchemy.Connection, idG: int, turn: int, start_piece: str, end_piece: str):
+    coup = start_piece + "/" + end_piece + "\n"
+    stmt1 = sqlalchemy.text("insert into COUP(idG, turn, coup) VALUES (:idG, :turn, :coup)")
+    connexion.execute(stmt1, {"idG": idG, "turn": turn, "coup": coup})
+    connexion.commit()
