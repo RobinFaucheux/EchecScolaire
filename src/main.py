@@ -30,7 +30,6 @@ def main():
 
     print(g.allowed_moves_graphic('e7'))
 
-    board.pla
 
 
     print(g.get_board().plateau_terminal(green_cases=g.get_board().get_case(g.get_board().translate('e7')).get_piece().remove_lines_after_piece()))
