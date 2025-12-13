@@ -84,15 +84,12 @@ class Piece:
         return self.name
 
     def move(self, case : Case) -> bool:
-        if case.get_pos() in self.accessible_spots():    
+        if case.get_pos() in self.accessible_spots():  
             self.case.remove_piece()
             if case.get_piece() != None:
                 if case.get_piece().get_name() == "king":
-                    self.case.get_board().get_game().win()
+                    case.get_board().get_game().win()
                 case.get_piece().remove() # A UPGRADE
             case.add_piece(self)
-            self.case = case
-            # print(self.case)
             return True
-
-    
+        return False
