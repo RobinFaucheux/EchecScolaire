@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     
 
 class Board:
-    def __init__(self, game : Game, width = 8, height = 8):
+    def __init__(self, game : Game, width = WIDHT_BOARD, height = HEIGHT_BOARD):
         self.width = width
         self.height = height
         self.game = game

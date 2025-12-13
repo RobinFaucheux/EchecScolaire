@@ -2,7 +2,6 @@ import sqlalchemy
 from datetime import date
 from model import *
 
-from model import Player
 
 def register_player(connexion : sqlalchemy.Connection, username : str, password : str) -> int:
     stmt = sqlalchemy.text("insert into PLAYER(pseudo, passwd) VALUES (:pseudo, :passwd) returning idP")
@@ -26,7 +25,7 @@ def save_game(connexion : sqlalchemy.Connection) -> int:
     return row[0] if row else None
 
 def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, player: Player, won: str):
-    final_duration = ((1 * 60 - game.get_time_white()) + (1 * 60 - game.get_time_black()))
+    final_duration = ((constant.TIMER * constant.ONE_MINUTE_IN_SECONDS - game.get_time_white()) + (constant.TIMER * constant.ONE_MINUTE_IN_SECONDS - game.get_time_black()))
     if game.get_joueur(0).get_id() == player.get_id():
         player_color = "WHITE"
     else:

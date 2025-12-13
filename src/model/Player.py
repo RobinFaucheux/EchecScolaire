@@ -1,4 +1,5 @@
 from math import ceil
+import constant as cons
 
 class Player:
 
@@ -27,7 +28,7 @@ class Player:
         self.historical.append(elo, date)
 
     def calculate_elo(self, elo_other_player: int, won: str) -> None:
-        k = 20
+        k = cons.COEFF_SENSIBILITE_ELO
         expected_score = 1 / (1 + 10**((self.elo - elo_other_player)/400))
         if won == "won":
             real_score = 1 

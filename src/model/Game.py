@@ -1,6 +1,7 @@
 from .Player import Player
 from .Board import Board
 import time
+import constant as cons
 
 class Game:
     def __init__(self, idG: int, player1: Player, player2: Player):
@@ -10,8 +11,8 @@ class Game:
         self.board = Board(self)
         self.board.init_pieces()
         self.joueurs = [player1, player2]
-        self.time_white = 1 * 60
-        self.time_black = 1 * 60
+        self.time_white = cons.TIMER * cons.ONE_MINUTE_IN_SECONDS
+        self.time_black = cons.TIMER * cons.ONE_MINUTE_IN_SECONDS
         self.turn_start_time = time.time()
 
 
