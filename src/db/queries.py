@@ -25,9 +25,14 @@ def save_game(connexion : sqlalchemy.Connection) -> int:
     row = res.fetchone()
     return row[0] if row else None
 
-def save_final_game(connexion : sqlalchemy.Connection, idG: int, player: Player, won: str):
-    stmt1 = sqlalchemy.text("insert into PLAY(idG, idP, won) VALUES (:idG, :idP, :won)")
-    connexion.execute(stmt1, {"idG": idG, "idP": player.get_id(), "won": won})
+def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, player: Player, won: str):
+    if game.get_joueur(0).get_id() == player.get_id():
+        player_color = "WHITE"
+    else:
+        player_color = "BLACK"
+    
+    stmt1 = sqlalchemy.text("insert into PLAY(idG, idP, won, color) VALUES (:idG, :idP, :won, :color)")
+    connexion.execute(stmt1, {"idG": idG, "idP": player.get_id(), "won": won, "color": player_color})
     connexion.commit()
     stmt2 = sqlalchemy.text("update GAME set stateG = :stateG where idG = :idG")
     connexion.execute(stmt2, {"stateG": "finished", "idG": idG})
