@@ -10,6 +10,9 @@ class Game:
         self.board.init_pieces()
         self.joueurs = [player1, player2]
 
+    def get_joueur(self, pos: int) -> Player:
+        return self.joueurs[pos]
+
     def get_idG(self) -> int:
         return self.idG  
     
@@ -57,8 +60,9 @@ class Game:
         
     
 
-    def move(self, start : str, end : str):
+    def move(self, start : str, end : str) -> bool:
         cstart = self.board.get_case(self.board.translate(start))
         cend = self.board.get_case(self.board.translate(end))
 
-        self.board.move(cstart, cend)
+        boolean = self.board.move(cstart, cend)
+        return boolean

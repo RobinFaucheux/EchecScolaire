@@ -135,7 +135,10 @@ class Board:
     def plateau_terminal(self, green_cases : list[tuple[int, int]] = []):
         cases = self.get_cases()
         draw = []
+        draw.append("\n")
+        cpt = self.height
         for row in reversed(cases):
+            draw.append(" " + str(cpt) + " ")
             for case in row:
                 piece = " "
                 if case.get_piece() is not None:
@@ -149,6 +152,8 @@ class Board:
                         draw.append(BACKGROUND_WHITE + TEXTE_BLACK + " " + piece + " " + RESET)
                     else:
                         draw.append(BACKGROUND_BLUE + TEXTE_BLACK + " " + piece + " " + RESET)
-    
             draw.append("\n")
+            cpt -= 1
+        draw.append("    a  b  c  d  e  f  g  h  ")
+        draw.append("\n")
         print("".join(draw))
