@@ -32,18 +32,21 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
             continue
 
         start_piece_tuple = board.translate(piece_to_be_moved)
-        start_case_piece = board.get_case(start_piece_tuple)
-
-        if not board.case_in_board(start_case_piece):
+        if not board.in_board(start_piece_tuple):
             print("This case not is in the board!")
             continue
 
+        start_case_piece = board.get_case(start_piece_tuple)
         if start_case_piece.get_piece() == None:
             print("No piece on this square!")
             continue
         
         if start_case_piece.get_piece().get_color().name != player_color:
             print("This is not your piece!")
+            continue
+        
+        if start_case_piece.get_piece().accessible_spots() == []:
+            print("This piece cant to move!")
             continue
 
         print(game.allowed_moves_graphic(piece_to_be_moved))
@@ -60,6 +63,10 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
                 continue
 
             end_piece_tuple = board.translate(location_piece_to_be_moved)
+            if not board.in_board(end_piece_tuple):
+                print("This case not is in the board!")
+                continue
+
             end_case_piece = board.get_case(end_piece_tuple)
 
             final_start = board.roundtrip(start_case_piece.get_pos())

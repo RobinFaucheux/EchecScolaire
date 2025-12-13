@@ -97,7 +97,9 @@ class Board:
         return self.cases
 
     def get_case(self, pos : tuple) -> Case:
-        return self.cases[pos[0]][pos[1]]
+        if self.in_board(pos):
+            return self.cases[pos[0]][pos[1]]
+        return None
 
     def get_Game(self) -> Game:
         return self.game
