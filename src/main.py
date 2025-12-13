@@ -20,8 +20,7 @@ def main():
     g = Game(id_game, players[0], players[1])
     # g = Game(1, p, p1)
     input("Press enter to start the game")
-    board = Board(g)
-    board.init_pieces()
+
 
     g.move('a2', 'a4')
     g.move('b2', 'b3')
@@ -31,7 +30,10 @@ def main():
 
     print(g.allowed_moves_graphic('e7'))
 
-    board.plateau_terminal()
+    board.pla
+
+
+    print(g.get_board().plateau_terminal(green_cases=g.get_board().get_case(g.get_board().translate('e7')).get_piece().remove_lines_after_piece()))
 
     input("Press to finish the game")
     g.set_finish()
@@ -44,8 +46,6 @@ def main():
         queries.save_final_game(connexion, id_game, players[0], 'won')
         queries.save_final_game(connexion, id_game, players[1], 'loose')
         print("Game over!")
-
-
 
 if __name__ == "__main__":
     connexion = db.open_connexion()

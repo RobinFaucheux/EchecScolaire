@@ -11,7 +11,7 @@ class Queen(Piece):
         self._vectors = []
         self.init_vectors()
         super().__init__(color, case, name, self._vectors)
-    
+
     def init_vectors(self):
         for i in range (-7, 7):
             self._vectors.append((i, i))
