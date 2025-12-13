@@ -5,6 +5,7 @@ from math import sqrt
 
 if TYPE_CHECKING:
     from ..Case import Case
+    from .Queen import Queen
 class Piece:
     def __init__(self, color : Color, case : Case, name: str, vectors = []):
         self.color =  color
@@ -108,7 +109,26 @@ class Piece:
         return self.name
 
     def move(self, case : Case) -> bool:
-        if case.get_pos() in self.accessible_spots():  
+        if case.get_pos() in self.accessible_spots():
+
+            if self.name == "pawn":
+                if self.color == Color.BLACK and case.get_pos()[0] == 0:
+                    if case.get_piece() != None:
+                        if case.get_piece().get_name() == "king":
+                            case.get_board().get_Game().win()
+                        case.get_piece().remove() # A UPGRADE
+                    self.remove()
+                    case.add_piece(Queen(Color.BLACK, case))
+                    return True
+                if self.color == Color.WHITE and case.get_pos()[0] == self.case.get_board().height-1:
+                    if case.get_piece() != None:
+                        if case.get_piece().get_name() == "king":
+                            case.get_board().get_Game().win()
+                        case.get_piece().remove() # A UPGRADE
+                    self.remove()
+                    case.add_piece(Queen(Color.WHITE, case))
+                    return True
+
             self.case.remove_piece()
             if case.get_piece() != None:
                 if case.get_piece().get_name() == "king":
