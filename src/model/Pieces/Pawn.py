@@ -1,6 +1,7 @@
 from __future__ import annotations  # <--- Magic line
 from ..Color import Color
 from .Piece import Piece
+from .Queen import Queen
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -24,15 +25,85 @@ class Pawn(Piece):
     
     def remove_lines_after_piece(self):
         l = super().remove_lines_after_piece()
-        res = [l[1]]
-        piece_1 = self.case.get_board().get_case(l[0]).get_piece()
-        if piece_1 is not None and piece_1.get_color() != self.color:
-            res.append(l[0])
+
+        res = []
+
+        d_vectors = {}
+        pos = self.case.get_pos()
+        for co in l:
+            vector = (co[0] - pos[0], co[1] - pos[1])
+            d_vectors[vector] = co
         
-        piece_2 = self.case.get_board().get_case(l[2]).get_piece()
-        if piece_2 is not None and piece_2.get_color() != self.color:
-            res.append(l[2])
-        
-        if (len(l) >3):
-            res.append(l[-1])
+        if self.color == Color.BLACK:
+            for vector, co in d_vectors.items():
+                piece = self.case.get_board().get_case(co).get_piece()
+                match vector:
+                    case (-1, -1):
+                        if piece != None and piece.get_color != self.color:
+                            res.append(co)
+                        continue
+                    case (-1, 0):
+                        if piece == None:
+                            res.append(co)
+                        continue
+                    case (-2, 0):
+                        if piece == None:
+                            res.append(co)
+                        continue
+                    case (-1, 1):
+                        if piece != None and piece.get_color != self.color:
+                            res.append(co)
+                        continue
+        else:
+            for vector, co in d_vectors.items():
+                piece = self.case.get_board().get_case(co).get_piece()
+                match vector:
+                    case (1, -1):
+                        if piece != None and piece.get_color != self.color:
+                            res.append(co)
+                        continue
+                    case (1, 0):
+                        if piece == None:
+                            res.append(co)
+                        continue
+                    case (2, 0):
+                        if piece == None:
+                            res.append(co)
+                        continue
+                    case (1, 1):
+                        if piece != None and piece.get_color != self.color:
+                            res.append(co)
+                        continue
         return res
+    
+    def move(self, case : Case) -> bool:
+        if case.get_pos() in self.accessible_spots():
+
+            if self.color == Color.BLACK and case.get_pos()[0] == 0:
+                if case.get_piece() != None:
+                    if case.get_piece().get_name() == "king":
+                        case.get_board().get_Game().win()
+                    case.get_piece().remove() # A UPGRADE
+                self.case.remove_piece()
+                self.remove()
+                case.add_piece(Queen(Color.BLACK, case))
+                return True
+            if self.color == Color.WHITE and case.get_pos()[0] == self.case.get_board().height-1:
+                if case.get_piece() != None:
+                    if case.get_piece().get_name() == "king":
+                        case.get_board().get_Game().win()
+                    case.get_piece().remove() # A UPGRADE
+                self.case.remove_piece()
+                self.remove()
+                case.add_piece(Queen(Color.WHITE, case))
+                return True
+
+            self.case.remove_piece()
+            if case.get_piece() != None:
+                if case.get_piece().get_name() == "king":
+                    case.get_board().get_Game().win()
+                case.get_piece().remove() # A UPGRADE
+            case.add_piece(self)
+            self.case = case
+            return True
+        return False
