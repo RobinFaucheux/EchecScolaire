@@ -167,3 +167,4 @@ class Board:
         draw.append("    a  b  c  d  e  f  g  h  ")
         draw.append("\n")
         print("".join(draw))
+        return "".join(draw)

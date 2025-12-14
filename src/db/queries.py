@@ -1,6 +1,7 @@
 import sqlalchemy
 from datetime import date
 from model import *
+from model import Game
 from typing import List, Dict, Union
 
 def register_player(connexion : sqlalchemy.Connection, username : str, password : str) -> int:

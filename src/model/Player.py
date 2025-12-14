@@ -1,6 +1,5 @@
 from math import ceil
 from .constant import *
-import db.queries as queries
 from typing import List, Dict, Union
 
 class Player:

@@ -91,7 +91,7 @@ class Game:
             coords = []
             for v in l:
                 coords.append(v)
-            self.board.plateau_terminal(piece)
+            return self.board.plateau_terminal(piece)
         
     
 
