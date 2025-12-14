@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from model.Pieces import Piece
-from .Color import Color
-from .Pieces.Pawn import Pawn
-from .Pieces.Rock import Rock
-from .Pieces.Knight import Knight
-from .Pieces.Bishop import Bishop
-from .Pieces.Queen import Queen
-from .Pieces.King import King
-from .Case import Case
-from .constant import *
+from model.pieces import Piece
+from .color import Color
+from .pieces.pawn import Pawn
+from .pieces.rock import Rock
+from .pieces.knight import Knight
+from .pieces.bishop import Bishop
+from .pieces.queen import Queen
+from .pieces.king import King
+from .case import Case
+from .constant import BACKGROUND_GREEN, TEXTE_BLACK, BACKGROUND_WHITE, BACKGROUND_BLUE, RESET, WIDHT_BOARD, HEIGHT_BOARD, BACKGROUND_RED, PIECE_SYMBOLS
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .Game import Game
+    from .game import Game
 
 
 class Board:
@@ -48,7 +48,7 @@ class Board:
         for i in range(self.height):
             l = []
             for j in range(self.width):
-                if (i % 2 == 0):
+                if i % 2 == 0:
                     if j % 2 == 0:
                         l.append(Case((i, j), Color.BLACK, self))
                     else:
@@ -151,7 +151,7 @@ class Board:
             return self.cases[pos[0]][pos[1]]
         return None
 
-    def get_white_king(self) -> 'King':
+    def get_white_king(self) -> "King":
         """
         Returns the white king piece.
 
@@ -160,7 +160,7 @@ class Board:
         """
         return self.white_king_piece
 
-    def get_black_king(self) -> 'King':
+    def get_black_king(self) -> "King":
         """
         Returns the black king piece.
 
@@ -169,7 +169,7 @@ class Board:
         """
         return self.black_king_piece
 
-    def get_Game(self) -> Game:
+    def get_game(self) -> Game:
         """
         Returns the game instance this board belongs to.
 
@@ -191,12 +191,12 @@ class Board:
         try:
             x = chain[0]
             y = int(chain[1:]) - 1
-            letters = 'abcdefghijklmnopqrstuvwxyz'
+            letters = "abcdefghijklmnopqrstuvwxyz"
 
             x = letters.index(x)
             return y, x
 
-        except:
+        except Exception:
             return None
 
     def roundtrip(self, pos: tuple) -> str:
@@ -213,11 +213,11 @@ class Board:
             y = pos[0] + 1
             x = pos[1]
 
-            letters = 'abcdefghijklmnopqrstuvwxyz'
+            letters = "abcdefghijklmnopqrstuvwxyz"
             x = letters[x]
             return str(x) + str(y)
 
-        except:
+        except Exception:
             print("Wrong coordinates")
 
     def move(self, start: Case, end: Case) -> bool:
@@ -262,7 +262,7 @@ class Board:
         draw = []
         green_cases = []
 
-        if piece != None:
+        if piece is not None:
             green_cases = piece.accessible_spots()
 
         draw.append("\n")
@@ -282,7 +282,7 @@ class Board:
                     draw.append(BACKGROUND_GREEN + TEXTE_BLACK + " " +
                                 display_piece + " " + RESET)
 
-                elif piece != None and case.get_pos() == piece.get_case(
+                elif piece is not None and case.get_pos() == piece.get_case(
                 ).get_pos():
                     draw.append(BACKGROUND_RED + TEXTE_BLACK + " " +
                                 display_piece + " " + RESET)

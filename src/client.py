@@ -1,5 +1,4 @@
 import socket
-import sys
 
 HOST = "127.0.0.1"
 PORT = 5555
@@ -22,7 +21,7 @@ def main_client():
         print("Server is not running.")
         return
 
-    f = sock.makefile(mode='rw', encoding='utf-8')
+    f = sock.makefile(mode="rw", encoding="utf-8")
 
     try:
         while True:

@@ -1,14 +1,15 @@
 import socket
 import sys
-from model import *
+from model.game import Game
+from model.player import Player
 import db.init_db as db
-import db.queries as queries
+from db import queries
 from colorama import init
 
 init()
 
 
-class serveur:
+class Serveur:
     """
     Represents a chess server.
 
@@ -16,10 +17,11 @@ class serveur:
         counter (int): A counter for tracking connections or sessions (currently unused).
     """
 
-    def __init__(self):
+    def __init__(self, connection):
         self.counter = 0
+        self.connection = connection
 
-    def mainServer(self, port):
+    def main_server(self, port):
         """
         Starts the server and listens for incoming client connections.
 
@@ -43,8 +45,8 @@ class serveur:
             cli, addr = sock.accept()
             print(f"New connection from {addr}")
 
-            sess = Session(self, cli)
-            sess.mainSession()
+            sess = Session(self, cli,self. connection)
+            sess.main_session()
 
             print("Session finished.")
 
@@ -56,7 +58,7 @@ class serveur:
             try:
                 sock.close()
                 print("Server socket closed. Exiting.")
-            except:
+            except Exception:
                 pass
             sys.exit()
 
@@ -73,17 +75,18 @@ class Session:
         board (Board): The game board for the current session.
     """
 
-    def __init__(self, serveur, sock):
+    def __init__(self, serveur, sock, connection):
+        self.connection = connection
         self.server = serveur
         self.socket = sock
-        self.file = sock.makefile(mode="rw", encoding='utf-8')
+        self.file = sock.makefile(mode="rw", encoding="utf-8")
 
-        player1 = Player(1, 'player1', 1200, [])
-        player2 = Player(2, 'player2', 1200, [])
+        player1 = Player(1, "player1", 1200, [])
+        player2 = Player(2, "player2", 1200, [])
 
         try:
-            id_game = queries.save_game(connexion)
-        except:
+            id_game = queries.save_game(self.connexion)
+        except Exception:
             id_game = 1
 
         self.game = Game(id_game, player1, player2)
@@ -123,7 +126,8 @@ class Session:
             prompt (str): The message to display to the client.
 
         Returns:
-            str | None: The client's response, lowercased and stripped, or None if connection is closed.
+            str | None: The client's response, lowercased and stripped, or None if connection 
+            is closed.
         """
         try:
             self.file.write(prompt + "\nEntree : \n")
@@ -136,7 +140,7 @@ class Session:
         except Exception:
             return None
 
-    def mainSession(self):
+    def main_session(self):
         """
         Main loop for a single game session with a client.
 
@@ -157,7 +161,7 @@ class Session:
                     self.send("Time is up! Game Over.")
                     break
 
-                self.send(f"\n==========================================")
+                self.send("\n==========================================")
                 self.send(
                     f"Turn {game.get_turn()} - {player.get_pseudo()} ({player_color})"
                 )
@@ -240,14 +244,15 @@ class Session:
 
                     game.update_clock()
                     self.send(
-                        f"> {player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}"
+                        f"> {player.get_pseudo()} moved {save_start_case_piece.get_name()} \
+                        from {final_start} to {final_end}"
                     )
 
                     try:
-                        queries.save_coup(connexion, game.get_idG(),
+                        queries.save_coup(self.connection, game.get_idG(),
                                           game.get_turn(), final_start,
                                           final_end)
-                    except:
+                    except Exception:
                         pass
 
                     game.set_turn(game.get_turn() + 1)
@@ -259,13 +264,13 @@ class Session:
                 old_elo_player1 = game.get_joueur(0).get_elo()
                 old_elo_player2 = game.get_joueur(1).get_elo()
 
-                game.get_joueur(0).calculate_elo(old_elo_player2, 'won')
-                game.get_joueur(1).calculate_elo(old_elo_player1, 'loose')
+                game.get_joueur(0).calculate_elo(old_elo_player2, "won")
+                game.get_joueur(1).calculate_elo(old_elo_player1, "loose")
 
-                queries.save_final_game(connexion, game, game.get_idG(),
-                                        game.get_joueur(0), 'won')
-                queries.save_final_game(connexion, game, game.get_idG(),
-                                        game.get_joueur(1), 'loose')
+                queries.save_final_game(self.connexion, game, game.get_idG(),
+                                        game.get_joueur(0), "won")
+                queries.save_final_game(self.connexion, game, game.get_idG(),
+                                        game.get_joueur(1), "loose")
             except Exception as e:
                 print(f"Error saving game results: {e}")
 
@@ -275,7 +280,7 @@ class Session:
             try:
                 self.file.close()
                 self.socket.close()
-            except:
+            except Exception:
                 pass
 
 
@@ -287,4 +292,4 @@ if __name__ == "__main__":
     else:
         print("Database ready.")
 
-    serveur().mainServer(5555)
+    Serveur(connexion).main_server(5555)

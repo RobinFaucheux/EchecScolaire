@@ -1,5 +1,7 @@
-from model import *
-import db.queries as queries
+from model.board import Board
+from model.player import Player
+from model.constant import TEXTE_RED, RESET
+from db import queries
 import sqlalchemy
 from typing import Dict, Type, Union
 
@@ -39,7 +41,7 @@ def play_turn(connexion: sqlalchemy.Connection,
         Dict[str, Union[Type[Player], str]]: Contains information about the result if the game ended
             (checkmate, stalemate, or timeout) and the players involved.
     """
-    game = board.get_Game()
+    game = board.get_game()
     player_color = game.current_color()
     if player_color == "WHITE":
         pos = 0
@@ -79,7 +81,7 @@ def play_turn(connexion: sqlalchemy.Connection,
 
     board.plateau_terminal()
     while True:
-        if (game.king_in_danger(player_color)):
+        if game.king_in_danger(player_color):
             print("Your king is in check")
 
         piece_to_be_moved = input(
@@ -100,7 +102,7 @@ def play_turn(connexion: sqlalchemy.Connection,
             continue
 
         start_case_piece = board.get_case(start_piece_tuple)
-        if start_case_piece.get_piece() == None:
+        if start_case_piece.get_piece() is None:
             print("No piece on this square!")
             continue
 
@@ -179,9 +181,10 @@ def play_turn(connexion: sqlalchemy.Connection,
                 }
 
             print(
-                f"{player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}"
+                f"{player.get_pseudo()} moved {save_start_case_piece.get_name()} from \
+                {final_start} to {final_end}"
             )
-            queries.save_coup(connexion, game.get_idG(), game.get_turn(),
+            queries.save_coup(connexion, game.get_id_g(), game.get_turn(),
                               final_start, final_end)
             game.set_turn(game.get_turn() + 1)
 

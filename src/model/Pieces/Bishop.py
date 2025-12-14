@@ -1,10 +1,10 @@
-from __future__ import annotations  # <--- Magic line
-from ..Color import Color
-from .Piece import Piece
+from __future__ import annotations
+from ..color import Color
+from .piece import Piece
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..Case import Case
+    from ..case import Case
 
 
 class Bishop(Piece):

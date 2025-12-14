@@ -1,10 +1,10 @@
-from __future__ import annotations  # <--- Magic line
-from ..Color import Color
-from .Piece import Piece
+from __future__ import annotations
+from ..color import Color
+from .piece import Piece
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..Case import Case
+    from ..case import Case
 
 
 class Queen(Piece):
@@ -14,7 +14,8 @@ class Queen(Piece):
     Attributes:
         color (Color): The color of the piece.
         case (Case): The board square where the queen is placed.
-        _vectors (list[tuple[int, int]]): Possible movement vectors in all straight and diagonal directions.
+        _vectors (list[tuple[int, int]]): Possible movement vectors in all straight and
+        diagonal directions.
     """
 
     def __init__(self, color: Color, case: Case):

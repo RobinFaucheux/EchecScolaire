@@ -2,7 +2,6 @@ import sqlalchemy
 from sqlalchemy import inspect, text
 from dotenv import load_dotenv
 import os
-import platform
 
 load_dotenv()
 
@@ -22,7 +21,7 @@ def open_connexion():
     """
     try:
         engine = sqlalchemy.create_engine(
-            f'{DB_DRIVER}://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}')
+            f"{DB_DRIVER}://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}")
         connexion = engine.connect()
     except Exception as err:
         print(err)
@@ -43,7 +42,7 @@ def database_already_initialized(connexion: sqlalchemy.Connection) -> bool:
     """
     inspector = inspect(connexion)
     tables = inspector.get_table_names()
-    return not (len(tables) == 0)
+    return len(tables) != 0
 
 
 def create_database(connexion: sqlalchemy.Connection) -> None:
@@ -51,7 +50,8 @@ def create_database(connexion: sqlalchemy.Connection) -> None:
     Initializes the database by executing the SQL statements in 'db/creation.sql'.
 
     Args:
-        connexion (sqlalchemy.Connection): The database connection to use for executing the statements.
+        connexion (sqlalchemy.Connection): The database connection to use for executing the 
+        statements.
     """
     path = "db/creation.sql"
     with open(path, "r", encoding="utf8") as f:

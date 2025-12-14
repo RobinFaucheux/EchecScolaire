@@ -1,11 +1,11 @@
-from __future__ import annotations  # <--- Magic line
-from ..Color import Color
-from .Piece import Piece
-from .Queen import Queen
+from __future__ import annotations
+from ..color import Color
+from .piece import Piece
+from .queen import Queen
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..Case import Case
+    from ..case import Case
 
 
 class Pawn(Piece):
@@ -15,7 +15,8 @@ class Pawn(Piece):
     Attributes:
         color (Color): The color of the pawn (WHITE or BLACK).
         case (Case): The board square where the pawn is placed.
-        _vectors (list[tuple[int, int]]): Possible movement vectors including standard moves, captures, and double advance on first move.
+        _vectors (list[tuple[int, int]]): Possible movement vectors including standard moves, 
+        captures, and double advance on first move.
     """
 
     def __init__(self, color: Color, case: Case):
@@ -68,19 +69,19 @@ class Pawn(Piece):
                 piece = self.case.get_board().get_case(co).get_piece()
                 match vector:
                     case (-1, -1):
-                        if piece != None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color != self.color:
                             res.append(co)
                         continue
                     case (-1, 0):
-                        if piece == None:
+                        if piece is None:
                             res.append(co)
                         continue
                     case (-2, 0):
-                        if piece == None:
+                        if piece is None:
                             res.append(co)
                         continue
                     case (-1, 1):
-                        if piece != None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color != self.color:
                             res.append(co)
                         continue
         else:
@@ -88,19 +89,19 @@ class Pawn(Piece):
                 piece = self.case.get_board().get_case(co).get_piece()
                 match vector:
                     case (1, -1):
-                        if piece != None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color != self.color:
                             res.append(co)
                         continue
                     case (1, 0):
-                        if piece == None:
+                        if piece is None:
                             res.append(co)
                         continue
                     case (2, 0):
-                        if piece == None:
+                        if piece is None:
                             res.append(co)
                         continue
                     case (1, 1):
-                        if piece != None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color != self.color:
                             res.append(co)
                         continue
         return res
@@ -122,9 +123,9 @@ class Pawn(Piece):
         if case.get_pos() in self.accessible_spots():
 
             if self.color == Color.BLACK and case.get_pos()[0] == 0:
-                if case.get_piece() != None:
+                if case.get_piece() is not None:
                     if case.get_piece().get_name() == "king":
-                        case.get_board().get_Game().win()
+                        case.get_board().get_game().win()
 
                     case.get_piece().remove()
 
@@ -135,9 +136,9 @@ class Pawn(Piece):
 
             if self.color == Color.WHITE and case.get_pos(
             )[0] == self.case.get_board().height - 1:
-                if case.get_piece() != None:
+                if case.get_piece() is not None:
                     if case.get_piece().get_name() == "king":
-                        case.get_board().get_Game().win()
+                        case.get_board().get_game().win()
 
                     case.get_piece().remove()
 
@@ -147,9 +148,9 @@ class Pawn(Piece):
                 return True
 
             self.case.remove_piece()
-            if case.get_piece() != None:
+            if case.get_piece() is not None:
                 if case.get_piece().get_name() == "king":
-                    case.get_board().get_Game().win()
+                    case.get_board().get_game().win()
 
                 case.get_piece().remove()
 

@@ -1,7 +1,6 @@
-from model import *
+from model.game import Game
 import db.init_db as db
-import db.queries as queries
-import model.constant as cons
+from db import queries
 import main_menu as menu
 import main_game as game
 from colorama import init
@@ -9,7 +8,7 @@ from colorama import init
 init()
 
 
-def main():
+def main(connexion):
     """
     Main entry point for the Chess game application.
 
@@ -22,7 +21,6 @@ def main():
     players = menu.main_menu(connexion)
     id_game = queries.save_game(connexion)
     g = Game(id_game, players[0], players[1])
-    # g = Game(1, p, p1)
     input("Press enter to start the game")
 
     board = g.get_board()
@@ -44,9 +42,9 @@ def main():
             dico["looser"].calculate_elo(old_elo_player_won, "loose")
 
             queries.save_final_game(connexion, g, id_game, dico["winner"],
-                                    'won')
+                                    "won")
             queries.save_final_game(connexion, g, id_game, dico["looser"],
-                                    'loose')
+                                    "loose")
             print("Result of game saved!")
 
         elif dico["result"] == "stalemate":
@@ -57,18 +55,18 @@ def main():
             dico["black"].calculate_elo(old_elo_player_white, "equality")
 
             queries.save_final_game(connexion, g, id_game, dico["white"],
-                                    'equality')
+                                    "equality")
             queries.save_final_game(connexion, g, id_game, dico["black"],
-                                    'equality')
+                                    "equality")
             print("Result of the game saved!")
 
 
 if __name__ == "__main__":
-    connexion = db.open_connexion()
-    if not db.database_already_initialized(connexion):
+    db_conn = db.open_connexion()
+    if not db.database_already_initialized(db_conn):
         print("The database is empty, initialization...")
-        db.create_database(connexion)
+        db.create_database(db_conn)
         print("Database initialized!")
     else:
         print("The database is already full")
-    main()
+    main(db_conn)

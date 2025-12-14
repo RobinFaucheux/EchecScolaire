@@ -1,9 +1,9 @@
-from __future__ import annotations  # <--- Magic line
-from ..Color import Color
+from __future__ import annotations
+from ..color import Color
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..Case import Case
+    from ..case import Case
 
 
 class Piece:
@@ -17,7 +17,9 @@ class Piece:
         _vectors (list[tuple[int, int]]): Movement directions relative to the current position.
     """
 
-    def __init__(self, color: Color, case: Case, name: str, vectors=[]):
+    def __init__(self, color: Color, case: Case, name: str, vectors = None):
+        if vectors is None:
+            vectors = []
         self.color = color
         self.case = case
         self._vectors = vectors
@@ -184,10 +186,10 @@ class Piece:
         if case.get_pos() in self.accessible_spots():
 
             self.case.remove_piece()
-            if case.get_piece() != None:
+            if case.get_piece() is not None:
 
                 if case.get_piece().get_name() == "king":
-                    case.get_board().get_Game().win()
+                    case.get_board().get_game().win()
 
                 case.get_piece().remove()
             case.add_piece(self)

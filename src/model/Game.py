@@ -1,8 +1,7 @@
-from .Player import Player
-from .Board import Board
-from .Case import Case
+from .player import Player
+from .board import Board
 import time
-from .constant import *
+from .constant import TIMER, ONE_MINUTE_IN_SECONDS
 from copy import deepcopy
 
 
@@ -11,7 +10,7 @@ class Game:
     Represents a chess game, managing players, board state, turns, clocks, and game rules.
 
     Attributes:
-        idG (int): Unique game identifier.
+        id_g (int): Unique game identifier.
         finish (bool): Whether the game is finished.
         turn (int): Current turn number.
         board (Board): The chess board with pieces.
@@ -21,8 +20,8 @@ class Game:
         turn_start_time (float): Timestamp for the start of the current turn.
     """
 
-    def __init__(self, idG: int, player1: Player, player2: Player):
-        self.idG = idG
+    def __init__(self, id_g: int, player1: Player, player2: Player):
+        self.id_g = id_g
         self.finish = False
         self.turn = 1
         self.board = Board(self)
@@ -41,14 +40,14 @@ class Game:
         """
         return self.joueurs[pos]
 
-    def get_idG(self) -> int:
+    def get_id_g(self) -> int:
         """
         Returns the game ID.
 
         Returns:
             int: The ID of the game.
         """
-        return self.idG
+        return self.id_g
 
     def get_time_white(self) -> int:
         """
@@ -240,7 +239,7 @@ class Game:
 
         for row in (self.board.get_cases()):
             for other_case in row:
-                if other_case.get_piece() != None:
+                if other_case.get_piece() is not None:
                     if other_case.get_piece().get_color().name != color:
 
                         other_list_accessible_spots = other_case.get_piece(
@@ -264,7 +263,7 @@ class Game:
             bool: True if the move would leave the king in check.
         """
         board_copy = deepcopy(self.board)
-        game_copy = board_copy.get_Game()
+        game_copy = board_copy.get_game()
 
         start_case = board_copy.get_case(start_pos)
         end_case = board_copy.get_case(end_pos)
@@ -296,7 +295,7 @@ class Game:
         for row in self.board.get_cases():
             for case in row:
                 piece = case.get_piece()
-                if piece != None:
+                if piece is not None:
                     if piece.get_color().name == player_color:
 
                         for end_pos in piece.accessible_spots():

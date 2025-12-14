@@ -1,5 +1,5 @@
 from math import ceil
-from .constant import *
+from model.constant import COEFF_SENSIBILITE_ELO
 from typing import List, Dict, Union
 
 
@@ -18,7 +18,9 @@ class Player:
                  id: int,
                  pseudo: str,
                  elo: float,
-                 historical: List[Dict[str, Union[int, str]]] = []):
+                 historical: List[Dict[str, Union[int, str]]] = None):
+        if historical is None:
+            historical = []
         self.id = id
         self.pseudo = pseudo
         self.elo = elo
@@ -89,6 +91,7 @@ class Player:
         """
         k = COEFF_SENSIBILITE_ELO
         expected_score = 1 / (1 + 10**((self.elo - elo_other_player) / 400))
+        real_score = ""
         if won == "won":
             real_score = 1
         elif won == "equality":

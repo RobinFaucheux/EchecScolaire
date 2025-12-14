@@ -1,6 +1,7 @@
 import db.queries as db
-from model import *
+from model.player import Player
 import sqlalchemy
+import sys
 
 
 def register_user(connexion: sqlalchemy.Connection) -> None:
@@ -91,7 +92,8 @@ def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
     - Returns a list containing both Player objects once both have joined.
 
     Args:
-        connexion (sqlalchemy.Connection): Database connection used for logging in or registering players.
+        connexion (sqlalchemy.Connection): Database connection used for logging in or 
+        registering players.
 
     Returns:
         list[Player]: List containing the two Player objects ready to play.
@@ -122,7 +124,7 @@ def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
                 register_user(connexion)
             else:
                 print("Goodbye!")
-                exit()
+                sys.exit()
 
     print("\nBoth players are ready!")
     print(

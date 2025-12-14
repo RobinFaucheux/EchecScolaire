@@ -1,7 +1,8 @@
 import sqlalchemy
 from datetime import date
-from model import *
-from model import Game
+from model.player import Player
+from model.game import Game
+from model.constant import TIMER, ONE_MINUTE_IN_SECONDS
 from typing import List, Dict, Union
 from sqlalchemy.engine import Row
 
@@ -66,7 +67,7 @@ def save_game(connexion: sqlalchemy.Connection) -> int:
     return row[0] if row else None
 
 
-def save_final_game(connexion: sqlalchemy.Connection, game: Game, idG: int,
+def save_final_game(connexion: sqlalchemy.Connection, game: Game, id_g: int,
                     player: Player, won: str) -> None:
     """
     Saves the final result of a game, updates player ELO and game state.
@@ -78,9 +79,9 @@ def save_final_game(connexion: sqlalchemy.Connection, game: Game, idG: int,
         player (Player): The player whose result is being saved.
         won (str): The result for this player ('won', 'loose', 'equality').
     """
-    final_duration = ((constant.TIMER * constant.ONE_MINUTE_IN_SECONDS -
+    final_duration = ((TIMER * ONE_MINUTE_IN_SECONDS -
                        game.get_time_white()) +
-                      (constant.TIMER * constant.ONE_MINUTE_IN_SECONDS -
+                      (TIMER * ONE_MINUTE_IN_SECONDS -
                        game.get_time_black()))
     if game.get_joueur(0).get_id() == player.get_id():
         player_color = "WHITE"
@@ -91,7 +92,7 @@ def save_final_game(connexion: sqlalchemy.Connection, game: Game, idG: int,
         "insert into PLAY(idG, idP, won, color) VALUES (:idG, :idP, :won, :color)"
     )
     connexion.execute(stmt1, {
-        "idG": idG,
+        "idG": id_g,
         "idP": player.get_id(),
         "won": won,
         "color": player_color
@@ -102,7 +103,7 @@ def save_final_game(connexion: sqlalchemy.Connection, game: Game, idG: int,
     )
     connexion.execute(stmt2, {
         "stateG": "finished",
-        "idG": idG,
+        "idG": id_g,
         "duration": final_duration
     })
     connexion.commit()
@@ -112,7 +113,7 @@ def save_final_game(connexion: sqlalchemy.Connection, game: Game, idG: int,
     connexion.commit()
 
 
-def save_coup(connexion: sqlalchemy.Connection, idG: int, turn: int,
+def save_coup(connexion: sqlalchemy.Connection, id_g: int, turn: int,
               start_piece: str, end_piece: str) -> None:
     """
     Saves a move made in a game to the database.
@@ -127,7 +128,7 @@ def save_coup(connexion: sqlalchemy.Connection, idG: int, turn: int,
     coup = start_piece + "/" + end_piece + "\n"
     stmt1 = sqlalchemy.text(
         "insert into COUP(idG, turn, coup) VALUES (:idG, :turn, :coup)")
-    connexion.execute(stmt1, {"idG": idG, "turn": turn, "coup": coup})
+    connexion.execute(stmt1, {"idG": id_g, "turn": turn, "coup": coup})
     connexion.commit()
 
 
@@ -142,7 +143,8 @@ def collect_historic_game_of_player(
         player (Player): The player whose history is being retrieved.
 
     Returns:
-        List[Dict[str, Union[int, str]]]: A list of dictionaries containing game ID, opponent's pseudo, and result.
+        List[Dict[str, Union[int, str]]]: A list of dictionaries containing game ID, opponent's 
+        pseudo, and result.
     """
     historic = []
     stmt1 = sqlalchemy.text("select idG from PLAY where idP = :idP")
