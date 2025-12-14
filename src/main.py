@@ -25,20 +25,37 @@ def main():
     board = g.get_board()
 
     while not g.get_finish():
-        game.play_turn(connexion, board)
+        dico = game.play_turn(connexion, board)
 
     board.plateau_terminal()
 
     input("Press to finish the game")
-    g.set_finish()
     if g.get_finish():
-        old_elo_player1 = g.get_joueur(0).get_elo()
-        old_elo_player2 = g.get_joueur(1).get_elo()
-        g.get_joueur(0).calculate_elo(old_elo_player2, 'won')
-        g.get_joueur(1).calculate_elo(old_elo_player1, 'loose')
-        queries.save_final_game(connexion, g, id_game, g.get_joueur(0), 'won')
-        queries.save_final_game(connexion, g, id_game, g.get_joueur(1), 'loose')
         print("Game over!")
+        print(dico)
+
+        if dico["result"] == "checkmate":
+            old_elo_player_won = dico["winner"].get_elo()
+            old_elo_player_lost = dico["looser"].get_elo()
+
+            dico["winner"].calculate_elo(old_elo_player_lost, "won")
+            dico["looser"].calculate_elo(old_elo_player_won, "loose")
+            
+            queries.save_final_game(connexion, g, id_game, dico["winner"], 'won')
+            queries.save_final_game(connexion, g, id_game, dico["looser"], 'loose')
+            print("Result of game saved!")
+
+        elif dico["result"] == "stalemate":
+            old_elo_player_black = dico["white"].get_elo()
+            old_elo_player_white = dico["black"].get_elo()
+
+            dico["white"].calculate_elo(old_elo_player_black, "equality")
+            dico["black"].calculate_elo(old_elo_player_white, "equality")
+            
+            queries.save_final_game(connexion, g, id_game, dico["white"], 'equality')
+            queries.save_final_game(connexion, g, id_game, dico["black"], 'equality')
+            print("Result of game saved!")
+
 
 if __name__ == "__main__":
     connexion = db.open_connexion()

@@ -106,7 +106,7 @@ class Game:
     
 
 
-    def king_in_danger(self, color: str):
+    def king_in_danger(self, color: str) -> bool:
         if color == "WHITE":
             king_piece = self.board.get_white_king()
         else:
@@ -117,6 +117,7 @@ class Game:
             for other_case in row:
                 if other_case.get_piece() != None:
                     if other_case.get_piece().get_color().name != color:
+
                         other_list_accessible_spots = other_case.get_piece().accessible_spots()
                         for other_accessible_spot in other_list_accessible_spots:
                            if other_accessible_spot == pos:
@@ -144,3 +145,29 @@ class Game:
 
         danger = game_copy.king_in_danger(player_color)
         return danger
+    
+
+
+    def has_legal_move(self, player_color: str) -> bool:
+        for row in self.board.get_cases():
+            for case in row:
+                piece = case.get_piece()
+                if piece != None:
+                    if piece.get_color().name == player_color:
+
+                        for end_pos in piece.accessible_spots():
+                            if not self.king_in_check_after_move(case.get_pos(), end_pos, player_color):
+                                return True
+        return False
+    
+
+    def is_checkmate(self, player_color: str) -> bool:
+        if  self.king_in_danger(player_color) and not self.has_legal_move(player_color):
+            return True
+        return False
+
+
+    def is_stalemate(self, player_color: str) -> bool:
+        if not self.king_in_danger(player_color) and not self.has_legal_move(player_color):
+            return True
+        return False

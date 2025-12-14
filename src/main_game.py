@@ -1,12 +1,13 @@
 from model import * 
 import db.queries as queries
 import sqlalchemy
+from typing import Dict, Type, Union
 
 def format_time(seconds: float) -> str:
     seconds = max(0, int(seconds))
     return f"{seconds // 60:02}:{seconds % 60:02}"
 
-def play_turn(connexion: sqlalchemy.Connection, board: Board):
+def play_turn(connexion: sqlalchemy.Connection, board: Board) -> Dict[str, Union[Type[Player], str]]:
     game = board.get_Game()
     player_color = game.current_color()
     if player_color == "WHITE":
@@ -14,6 +15,25 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
     else:
         pos = 1
     player = game.get_joueur(pos)
+
+    if game.is_checkmate(player_color):
+        print("\n" + TEXTE_RED + "CHECKMATE" + RESET)
+        game.set_finish()
+        looser = game.get_joueur(pos)
+        if pos == 0:
+            winner = game.get_joueur(1)
+        else:
+            winner = game.get_joueur(0)
+        print("Player", winner.get_pseudo(), "won!")
+        print("Player", looser.get_pseudo(), "lost!")
+        return {"result": "checkmate", "winner": winner, "looser": looser}
+
+    if game.is_stalemate(player_color):
+        print("\n" + TEXTE_RED + "STALEMATE" + RESET)
+        game.set_finish()
+        print("Equality between the player", game.get_joueur(0), "and the player", game.get_joueur(1))
+        return {"result": "stalemate", "white": game.get_joueur(0), "black": game.get_joueur(1)}
+
     print(f"\nTurn {game.get_turn()} - Player {player.get_pseudo()}")
 
     print(f"White time: {format_time(game.time_white)}")
@@ -52,7 +72,7 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
             print("This piece cant to move!")
             continue
 
-        print(game.allowed_moves_graphic(piece_to_be_moved))
+        game.allowed_moves_graphic(piece_to_be_moved)
         while True:
         
             location_piece_to_be_moved = input("Enter the destination square (example: a4): ").lower()
@@ -96,5 +116,4 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
             queries.save_coup(connexion, game.get_idG(), game.get_turn(), final_start, final_end)
             game.set_turn(game.get_turn() + 1)
 
-            board.plateau_terminal()
             return
