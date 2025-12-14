@@ -170,8 +170,8 @@ class Session:
                         winner = game.get_joueur(1)
                     else:
                         winner = game.get_joueur(0)
-                    self.send("Player", winner.get_pseudo(), "won!")
-                    self.send("Player", looser.get_pseudo(), "lost!")
+                    self.send("Player" + winner.get_pseudo() + "won!")
+                    self.send("Player" + looser.get_pseudo() + "lost!")
                     return {
                         "result": "checkmate",
                         "winner": winner,
@@ -181,8 +181,8 @@ class Session:
                 if game.is_stalemate(player_color):
                     self.send("\n" + TEXTE_RED + "STALEMATE" + RESET)
                     game.set_finish()
-                    self.send("Equality between the player", game.get_joueur(0),
-                              "and the player", game.get_joueur(1))
+                    self.send("Equality between the player" + game.get_joueur(0) +
+                              "and the player" + game.get_joueur(1))
                     return {
                         "result": "stalemate",
                         "white": game.get_joueur(0),
@@ -285,22 +285,22 @@ class Session:
                     game.update_clock()
                     if game.get_time_black() == 0 or game.get_time_white() == 0:
                         if game.get_time_black() == 0:
-                            self.send("\n" + TEXTE_RED + "player",
-                                      game.get_joueur(1).get_pseudo(),
+                            self.send("\n" + TEXTE_RED + "player" +
+                                      game.get_joueur(1).get_pseudo() +
                                       "time elapse" + RESET)
                             game.set_finish()
                             looser = game.get_joueur(1)
                             winner = game.get_joueur(0)
                         elif game.get_time_white() == 0:
-                            self.send("\n" + TEXTE_RED + "player",
-                                      game.get_joueur(0).get_pseudo(),
+                            self.send("\n" + TEXTE_RED + "player" +
+                                      game.get_joueur(0).get_pseudo() +
                                       "time elapse" + RESET)
                             game.set_finish()
                             looser = game.get_joueur(0)
                             winner = game.get_joueur(1)
 
-                        self.send("Player", winner.get_pseudo(), "won!")
-                        self.send("Player", looser.get_pseudo(), "lost!")
+                        self.send("Player" + winner.get_pseudo() + "won!")
+                        self.send("Player" + looser.get_pseudo() + "lost!")
                         return {
                             "result": "checkmate",
                             "winner": winner,
