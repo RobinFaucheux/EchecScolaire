@@ -26,6 +26,8 @@ class Board:
         self.game = game
         self.cases = []
         self.init_board()
+        self.white_king_piece = None
+        self.black_king_piece = None
     
     def init_board(self):
         for i in range(self.height):
@@ -55,7 +57,7 @@ class Board:
             pawn = Pawn(Color.BLACK, case)
             case.add_piece(pawn)
 
-        pieces = [
+        pieces: list[tuple[type[Piece], list[tuple[int, int, Color]]]] = [
             (Rock, [
                 (0, 0, Color.WHITE), 
                 (0, self.width - 1, Color.WHITE),
@@ -87,6 +89,13 @@ class Board:
             for x, y, color in positions:
                 case = self.get_case((x, y))
                 piece = clss(color, case)
+                name = piece.get_name()
+                if name == "king":
+                    if piece.get_color().name == "WHITE":
+                        self.white_king_piece = piece
+                    else:
+                        self.black_king_piece = piece
+
                 case.add_piece(piece)
 
     def in_board(self, pos : tuple) -> bool:
@@ -102,6 +111,12 @@ class Board:
         if self.in_board(pos):
             return self.cases[pos[0]][pos[1]]
         return None
+    
+    def get_white_king(self) -> 'King': 
+        return self.white_king_piece 
+    
+    def get_black_king(self) -> 'King': 
+        return self.black_king_piece
 
     def get_Game(self) -> Game:
         return self.game
@@ -135,7 +150,14 @@ class Board:
             print("Wrong coordinates")
 
     def move(self, start : Case, end : Case) -> bool:
-        return start.get_piece().move(end)
+        success = start.get_piece().move(end)
+        if success:
+            if end.get_piece().get_name() == "King":
+                if end.get_piece().get_color().name == "WHITE":
+                    self.white_king_piece = end.get_piece()
+                else:
+                    self.black_king_piece = end.get_piece()
+        return success
     
     def plateau_terminal(self, piece : Piece = None):
         cases = self.get_cases()

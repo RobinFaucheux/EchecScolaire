@@ -21,6 +21,9 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
 
     board.plateau_terminal()
     while True:
+        if (game.king_in_danger(player_color)) :
+                print("Your king is in check")
+
         piece_to_be_moved = input("Enter the starting square (example: a2): ").lower()
 
         if len(piece_to_be_moved) < 2:
@@ -74,10 +77,17 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
 
             save_start_case_piece = start_case_piece.get_piece()
 
+            if game.king_in_check_after_move(start_case_piece.get_pos(), end_case_piece.get_pos(), player_color):
+                print("Move would put your king in danger! Choose another piece.")
+                board.plateau_terminal()
+                break
+
             reussi = game.move(piece_to_be_moved, location_piece_to_be_moved)
+
             if not reussi:
                 print("Movement not possible, please choose a green box.")
                 continue
+
             game.update_clock()
             if game.get_time_black() == 0 or game.get_time_white() == 0:
                 break
@@ -87,5 +97,4 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board):
             game.set_turn(game.get_turn() + 1)
 
             board.plateau_terminal()
-            break
-        break
+            return

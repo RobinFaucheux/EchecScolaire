@@ -16,7 +16,10 @@ class Case:
         self.board = board
     
     def get_piece(self) -> Piece:
-        return self.piece 
+        return self.piece
+    
+    def set_piece(self, new_piece: Piece) -> Piece:
+        self.piece = new_piece
 
     def remove_piece(self) -> bool:
         self.piece = None

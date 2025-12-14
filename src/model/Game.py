@@ -3,6 +3,7 @@ from .Board import Board
 from .Case import Case
 import time
 from .constant import *
+from copy import deepcopy
 
 class Game:
     def __init__(self, idG: int, player1: Player, player2: Player):
@@ -94,7 +95,6 @@ class Game:
                 coords.append(v)
             self.board.plateau_terminal(piece)
         
-    
 
     def move(self, start : str, end : str) -> bool:
         cstart = self.board.get_case(self.board.translate(start))
@@ -103,21 +103,44 @@ class Game:
         boolean = self.board.move(cstart, cend)
         return boolean
     
+    
 
-    def case_is_attacked(self, case: Case):
-        color_piece = case.get_piece().get_color().name
 
-        list_accessible_spots = case.get_piece().accessible_spots()
-        print(list_accessible_spots)
-        
+    def king_in_danger(self, color: str):
+        if color == "WHITE":
+            king_piece = self.board.get_white_king()
+        else:
+            king_piece = self.board.get_black_king()
+        pos = king_piece.get_case().get_pos()
+
         for row in (self.board.get_cases()):
             for other_case in row:
                 if other_case.get_piece() != None:
-                    if other_case.get_piece().get_color().name != color_piece:
+                    if other_case.get_piece().get_color().name != color:
                         other_list_accessible_spots = other_case.get_piece().accessible_spots()
                         for other_accessible_spot in other_list_accessible_spots:
-                            for accessible_spot in list_accessible_spots:
-                                if accessible_spot == other_accessible_spot:
-                                    list_accessible_spots.remove(accessible_spot)
+                           if other_accessible_spot == pos:
+                                return True
+        return False
 
-        print(list_accessible_spots)
+
+    def king_in_check_after_move(self, start_pos: tuple, end_pos: tuple, player_color: str) -> bool:
+        board_copy = deepcopy(self.board)
+        game_copy = board_copy.get_Game()
+
+        start_case = board_copy.get_case(start_pos)
+        end_case = board_copy.get_case(end_pos)
+        moving_piece = start_case.get_piece()
+
+        start_case.set_piece(None)
+        end_case.set_piece(moving_piece)
+        moving_piece.set_case(end_case)
+        
+        if moving_piece.get_name() == "King":
+            if moving_piece.get_color().name == "WHITE":
+                board_copy.white_king_piece = moving_piece
+            else:
+                board_copy.black_king_piece = moving_piece
+
+        danger = game_copy.king_in_danger(player_color)
+        return danger
