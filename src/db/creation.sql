@@ -8,16 +8,24 @@ create table PLAYER (
 create table GAME (
     idG int primary key auto_increment,
     dateG date,
-    duration float,
+    duration float default 0.0,
     stateG ENUM('in progress', 'finished')
 );
 
 create table PLAY (
     idP int,
     idG int,
-    won int,
-    color ENUM('WHITE','BLACK'),
+    won ENUM('won', 'equality', 'loose') default null,
+    color ENUM('WHITE', 'BLACK'),
     primary key(idP, idG),
     foreign key(idP) references PLAYER(idP),
+    foreign key(idG) references GAME(idG)
+);
+
+create table COUP (
+    idG int,
+    turn int,
+    coup varchar(10),
+    primary key(idG, turn),
     foreign key(idG) references GAME(idG)
 );

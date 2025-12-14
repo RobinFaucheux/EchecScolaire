@@ -18,25 +18,31 @@ def register_user(connexion):
     input()
 
 
-def login_player(connexion):
+def login_player(connexion, players):
     print("\n-- Log in --")
 
     id = input("Enter your ID: ").strip()
-    while not id:
-        print("id cannot be empty.")
+    id_other = (players[0].get_id() if players else "rien")
+    while not id or id == str(id_other):
+        print("id cannot be empty or same ID that player 1.")
         id = input("Enter your id: ").strip()
 
     player = db.collect_player(connexion, id)
     player_obj = None
     if player:
+        player_obj = Player(player[0], player[1], player[3])
+        player_obj.set_historical(db.collect_historic_game_of_player(connexion, player_obj))
         print(f"\nWelcome back, {player[1]}! Your ELO: {player[3]}")
-        player_obj = Player(player[0], player[1], player[2], [])
+        historicals = player_obj.get_historical()
+        if historicals != []:
+            print("Your game historicals : ")
+            for game in player_obj.get_historical():
+                print("game :", game["id_game"], "/ opponent :",  game["pseudo_joueur"], "/ result of the game :",  game["result"], "\n", end="")
     else:
         print("\nInvalid ID\n")
     return player_obj
 
-
-def main_menu(connexion):
+def main_menu(connexion) -> list[Player]:
     players = []
     print("======================================")
     print("       Welcome to ChessSchool")
@@ -54,7 +60,7 @@ def main_menu(connexion):
                 choice = input("Please choose an option (1-3): ").strip()
 
             if choice == "1":
-                player = login_player(connexion)
+                player = login_player(connexion, players)
                 if player:
                     players.append(player)        
                     input()

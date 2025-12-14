@@ -1,39 +1,44 @@
 from model import *
 import db.init_db as db
-import constant as cons
-import menu
+import db.queries as queries
+import model.constant as cons
+import main_menu as menu
+import main_game as game
 
-def plateau_terminal(board: Board):
-    cases = board.get_cases()
-    draw = []
-    for row in reversed(cases):
-        for case in row:
-            piece = " "
-            if case.get_piece() is not None:
-                piece_obj = case.get_piece()
-                key = (piece_obj.get_name(), piece_obj.get_color().name)
-                piece = cons.PIECE_SYMBOLS.get(key)
-
-            if case.get_color().name == "WHITE":
-                draw.append(cons.BACKGROUND_WHITE + cons.TEXTE_BLACK + " " + piece + " " + cons.RESET)
-            else:
-                draw.append(cons.BACKGROUND_BLUE + cons.TEXTE_BLACK + " " + piece + " " + cons.RESET)
-   
-        draw.append("\n")
-    print("".join(draw))
+from colorama import init
+init()
 
 p = Player(1, "a", 1, [])
 p1 = p
-g = Game(p, p1)
+g = Game(1, p, p1)
+
+l = [p, p1]
+
 
 def main():
     players = menu.main_menu(connexion)
-    g = Game(players[0], players[1])
+    id_game = queries.save_game(connexion)
+    g = Game(id_game, players[0], players[1])
+    # g = Game(1, p, p1)
     input("Press enter to start the game")
-    board = Board(g)
-    board.init_pieces()
-    plateau_terminal(board)
 
+    board = g.get_board()
+
+    # while not g.get_finish():
+    #     game.play_turn(connexion, board)
+
+    board.plateau_terminal()
+
+    input("Press to finish the game")
+    g.set_finish()
+    if g.get_finish():
+        old_elo_player1 = g.get_joueur(0).get_elo()
+        old_elo_player2 = g.get_joueur(1).get_elo()
+        g.get_joueur(0).calculate_elo(old_elo_player2, 'won')
+        g.get_joueur(1).calculate_elo(old_elo_player1, 'loose')
+        queries.save_final_game(connexion, g, id_game, g.get_joueur(0), 'won')
+        queries.save_final_game(connexion, g, id_game, g.get_joueur(1), 'loose')
+        print("Game over!")
 
 if __name__ == "__main__":
     connexion = db.open_connexion()

@@ -14,5 +14,6 @@ class Rock(Piece):
     
     def init_vectors(self):
         for i in range (-7, 7):
-            self._vectors.append((0, i))
-            self._vectors.append((i, 0))
+            if i!=0:
+                self._vectors.append((0, i))
+                self._vectors.append((i, 0))
