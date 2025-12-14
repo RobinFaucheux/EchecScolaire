@@ -182,8 +182,7 @@ def play_turn(connexion: sqlalchemy.Connection,
 
             print(
                 f"{player.get_pseudo()} moved {save_start_case_piece.get_name()} from \
-                {final_start} to {final_end}"
-            )
+                {final_start} to {final_end}")
             queries.save_coup(connexion, game.get_id_g(), game.get_turn(),
                               final_start, final_end)
             game.set_turn(game.get_turn() + 1)

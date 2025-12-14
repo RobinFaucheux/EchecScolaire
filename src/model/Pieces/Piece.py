@@ -17,7 +17,7 @@ class Piece:
         _vectors (list[tuple[int, int]]): Movement directions relative to the current position.
     """
 
-    def __init__(self, color: Color, case: Case, name: str, vectors = None):
+    def __init__(self, color: Color, case: Case, name: str, vectors=None):
         if vectors is None:
             vectors = []
         self.color = color

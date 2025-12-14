@@ -79,10 +79,8 @@ def save_final_game(connexion: sqlalchemy.Connection, game: Game, id_g: int,
         player (Player): The player whose result is being saved.
         won (str): The result for this player ('won', 'loose', 'equality').
     """
-    final_duration = ((TIMER * ONE_MINUTE_IN_SECONDS -
-                       game.get_time_white()) +
-                      (TIMER * ONE_MINUTE_IN_SECONDS -
-                       game.get_time_black()))
+    final_duration = ((TIMER * ONE_MINUTE_IN_SECONDS - game.get_time_white()) +
+                      (TIMER * ONE_MINUTE_IN_SECONDS - game.get_time_black()))
     if game.get_joueur(0).get_id() == player.get_id():
         player_color = "WHITE"
     else:
