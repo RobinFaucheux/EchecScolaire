@@ -34,7 +34,7 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board) -> Dict[str, Union
         print("Equality between the player", game.get_joueur(0), "and the player", game.get_joueur(1))
         return {"result": "stalemate", "white": game.get_joueur(0), "black": game.get_joueur(1)}
 
-    print(f"\nTurn {game.get_turn()} - Player {player.get_pseudo()}")
+    print(f"\nTurn {game.get_turn()} - Player {player.get_pseudo()} - color : {player_color}")
 
     print(f"White time: {format_time(game.time_white)}")
     print(f"Black time: {format_time(game.time_black)}")
@@ -110,7 +110,20 @@ def play_turn(connexion: sqlalchemy.Connection, board: Board) -> Dict[str, Union
 
             game.update_clock()
             if game.get_time_black() == 0 or game.get_time_white() == 0:
-                break
+                if game.get_time_black() == 0:
+                    print("\n" + TEXTE_RED + "player", game.get_joueur(1).get_pseudo(), "time elapse" + RESET)
+                    game.set_finish()
+                    looser = game.get_joueur(1)
+                    winner = game.get_joueur(0)
+                elif game.get_time_white() == 0:
+                    print("\n" + TEXTE_RED + "player", game.get_joueur(0).get_pseudo(), "time elapse" + RESET)
+                    game.set_finish()
+                    looser = game.get_joueur(0)
+                    winner = game.get_joueur(1)
+
+                print("Player", winner.get_pseudo(), "won!")
+                print("Player", looser.get_pseudo(), "lost!")
+                return {"result": "checkmate", "winner": winner, "looser": looser}
 
             print(f"{player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}")
             queries.save_coup(connexion, game.get_idG(), game.get_turn(), final_start, final_end)

@@ -32,7 +32,6 @@ def main():
     input("Press to finish the game")
     if g.get_finish():
         print("Game over!")
-        print(dico)
 
         if dico["result"] == "checkmate":
             old_elo_player_won = dico["winner"].get_elo()
