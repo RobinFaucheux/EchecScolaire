@@ -17,7 +17,7 @@ class Piece:
         return self.color
 
 
-    def set_color(self, color : Color):
+    def set_color(self, color : Color) -> None:
         self.color = color
 
 
@@ -25,7 +25,7 @@ class Piece:
         return self.case
 
     
-    def set_case(self, case : Case):
+    def set_case(self, case : Case) -> None:
         self.case = case
 
 
@@ -54,7 +54,7 @@ class Piece:
         return l
 
 
-    def remove_lines_after_piece(self):
+    def remove_lines_after_piece(self) -> None:
         l_origin = self.spots_in_map()
         coords = self.case.get_pos()
         l_vect = {}

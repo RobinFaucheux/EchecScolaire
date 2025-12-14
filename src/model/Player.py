@@ -23,11 +23,11 @@ class Player:
         return self.elo
 
 
-    def get_historical(self) -> List[Dict[str, Union[int, str]]]:
+    def get_historical(self) -> List[Dict[str, Union[int, str]]] :
         return self.historical
 
 
-    def set_historical(self, historical: List[Dict[str, Union[int, str]]]):
+    def set_historical(self, historical: List[Dict[str, Union[int, str]]]) -> None:
         self.historical = historical
 
 

@@ -1,8 +1,9 @@
 import db.queries as db
 from model import *
+import sqlalchemy
 
 
-def register_user(connexion):
+def register_user(connexion: sqlalchemy.Connection) -> None:
     print("\n-- Register --")
     username = input("Enter your username: ").strip()
     while not username:
@@ -19,7 +20,7 @@ def register_user(connexion):
     input()
 
 
-def login_player(connexion, players):
+def login_player(connexion: sqlalchemy.Connection, players: list[Player, Player]) -> Player:
     print("\n-- Log in --")
 
     id = input("Enter your ID: ").strip()
@@ -44,7 +45,7 @@ def login_player(connexion, players):
     return player_obj
 
 
-def main_menu(connexion) -> list[Player]:
+def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
     players = []
     print("======================================")
     print("       Welcome to ChessSchool")

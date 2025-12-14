@@ -26,7 +26,7 @@ class Pawn(Piece):
         return super().process_vectors()
     
 
-    def remove_lines_after_piece(self):
+    def remove_lines_after_piece(self) -> list:
         l = super().remove_lines_after_piece()
         res = []
         d_vectors = {}
@@ -85,16 +85,21 @@ class Pawn(Piece):
                 if case.get_piece() != None:
                     if case.get_piece().get_name() == "king":
                         case.get_board().get_Game().win()
+
                     case.get_piece().remove()
+
                 self.case.remove_piece()
                 self.remove()
                 case.add_piece(Queen(Color.BLACK, case))
                 return True
+            
             if self.color == Color.WHITE and case.get_pos()[0] == self.case.get_board().height-1:
                 if case.get_piece() != None:
                     if case.get_piece().get_name() == "king":
                         case.get_board().get_Game().win()
+
                     case.get_piece().remove()
+
                 self.case.remove_piece()
                 self.remove()
                 case.add_piece(Queen(Color.WHITE, case))
@@ -104,7 +109,9 @@ class Pawn(Piece):
             if case.get_piece() != None:
                 if case.get_piece().get_name() == "king":
                     case.get_board().get_Game().win()
+
                 case.get_piece().remove()
+                
             case.add_piece(self)
             self.case = case
             return True

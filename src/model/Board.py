@@ -29,7 +29,7 @@ class Board:
         self.black_king_piece = None
 
 
-    def init_board(self):
+    def init_board(self) -> None:
         for i in range(self.height):
             l = []
             for j in range(self.width):
@@ -46,7 +46,7 @@ class Board:
             self.cases.append(l)
 
 
-    def init_pieces(self):
+    def init_pieces(self) -> None:
         
         for i in range(self.width):
             case = self.get_case((1, i))
@@ -204,7 +204,7 @@ class Board:
 
             draw.append("\n")
             cpt -= 1
-            
+
         draw.append("    a  b  c  d  e  f  g  h  ")
         draw.append("\n")
         print("".join(draw))

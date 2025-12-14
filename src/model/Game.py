@@ -42,7 +42,7 @@ class Game:
         return self.board
 
 
-    def set_finish(self):
+    def set_finish(self) -> None:
         self.finish = True
 
 
@@ -54,7 +54,7 @@ class Game:
         self.turn = new_turn
 
 
-    def get_joueurs(self):
+    def get_joueurs(self) -> list[Player, Player]:
         return self.joueurs
 
 

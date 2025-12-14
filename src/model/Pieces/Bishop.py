@@ -13,7 +13,7 @@ class Bishop(Piece):
         self.init_vectors()
         super().__init__(color, case, name, self._vectors)
     
-    def init_vectors(self):
+    def init_vectors(self) -> None:
         for i in range (-7, 7):
             if i!=0:
                 self._vectors.append((i, i))

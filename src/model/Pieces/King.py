@@ -13,8 +13,8 @@ class King(Piece):
         self.init_vectors()
         super().__init__(color, case, name, self._vectors)
     
-    
-    def init_vectors(self):
+
+    def init_vectors(self) -> None:
         for i in range(-1, 2):
             for j in range (-1, 2):
                 if (i != 0 and j != 0):
