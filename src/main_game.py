@@ -3,9 +3,11 @@ import db.queries as queries
 import sqlalchemy
 from typing import Dict, Type, Union
 
+
 def format_time(seconds: float) -> str:
     seconds = max(0, int(seconds))
     return f"{seconds // 60:02}:{seconds % 60:02}"
+
 
 def play_turn(connexion: sqlalchemy.Connection, board: Board) -> Dict[str, Union[Type[Player], str]]:
     game = board.get_Game()

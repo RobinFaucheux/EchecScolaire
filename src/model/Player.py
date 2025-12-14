@@ -10,26 +10,30 @@ class Player:
         self.elo = elo
         self.historical = historical
 
+
     def get_id(self) -> int:
         return self.id
+
 
     def get_pseudo(self) -> str:
         return self.pseudo
 
+
     def get_elo(self) -> int:
         return self.elo
 
+
     def get_historical(self) -> List[Dict[str, Union[int, str]]]:
         return self.historical
-    
+
+
     def set_historical(self, historical: List[Dict[str, Union[int, str]]]):
         self.historical = historical
+
 
     def set_elo(self, new_elo: int) -> None:
         self.elo = new_elo
 
-    # def add_historical_entry(self, elo: int, date: str) -> None:
-    #     self.historical.append(elo, date)
 
     def calculate_elo(self, elo_other_player: int, won: str) -> None:
         k = COEFF_SENSIBILITE_ELO

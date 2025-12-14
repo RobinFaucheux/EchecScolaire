@@ -3,13 +3,15 @@ import sys
 from model import *
 import db.init_db as db
 import db.queries as queries
-
 from colorama import init
 init()
 
+
 class serveur:
+
     def __init__(self):
         self.counter = 0
+
 
     def mainServer(self, port):
         sock = socket.socket()
@@ -17,7 +19,7 @@ class serveur:
         
         try:
             sock.bind(("0.0.0.0", port))
-            sock.listen(1) # We only expect 1 connection for now
+            sock.listen(1)
             print(f"Server listening on port {port}...")
         except Exception as e:
             print(f"Error binding server: {e}")
@@ -45,6 +47,7 @@ class serveur:
                 pass
             sys.exit()
 
+
 class Session:
     def __init__(self, serveur, sock):
         self.server = serveur
@@ -62,9 +65,11 @@ class Session:
         self.game = Game(id_game, player1, player2)
         self.board = self.game.get_board()
 
+
     def format_time(self, seconds: float) -> str:
         seconds = max(0, int(seconds))
         return f"{seconds // 60:02}:{seconds % 60:02}"
+
 
     def send(self, message):
         try:
@@ -72,6 +77,7 @@ class Session:
             self.file.flush()
         except Exception:
             pass
+
 
     def ask_input(self, prompt):
         try:
@@ -84,6 +90,7 @@ class Session:
             return response.strip().lower()
         except Exception:
             return None
+
 
     def mainSession(self):
         game = self.game
@@ -199,6 +206,7 @@ class Session:
                 self.socket.close()
             except:
                 pass
+
 
 if __name__ == "__main__":
     connexion = db.open_connexion()

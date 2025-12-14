@@ -4,15 +4,8 @@ import db.queries as queries
 import model.constant as cons
 import main_menu as menu
 import main_game as game
-
 from colorama import init
 init()
-
-p = Player(1, "a", 1, [])
-p1 = p
-g = Game(1, p, p1)
-
-l = [p, p1]
 
 
 def main():

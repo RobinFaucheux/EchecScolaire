@@ -1,6 +1,7 @@
 import db.queries as db
 from model import *
 
+
 def register_user(connexion):
     print("\n-- Register --")
     username = input("Enter your username: ").strip()
@@ -41,6 +42,7 @@ def login_player(connexion, players):
     else:
         print("\nInvalid ID\n")
     return player_obj
+
 
 def main_menu(connexion) -> list[Player]:
     players = []

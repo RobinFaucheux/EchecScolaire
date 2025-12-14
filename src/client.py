@@ -12,24 +12,18 @@ def main_client():
         print("Server is not running.")
         return
 
-    # Use makefile for easier reading/writing of lines
-    # 'rw' means read/write, 'utf-8' handles characters properly
     f = sock.makefile(mode='rw', encoding='utf-8')
 
     try:
         while True:
-            # We read line by line from the server
             line = f.readline()
             
             if not line:
-                # If server closes connection, readline returns empty string
                 print("Server closed connection.")
                 break
             
             print(line, end="")
 
-            # LOGIC: If the server asks for input (contains ": "), we let the user type
-            # We check specific keywords that indicate the server is waiting
             if "Entree : " in line:
                 user_input = input()
                 f.write(user_input + "\n")

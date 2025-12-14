@@ -21,76 +21,100 @@ class Game:
     def get_joueur(self, pos: int) -> Player:
         return self.joueurs[pos]
 
+
     def get_idG(self) -> int:
         return self.idG
-    
+
+
     def get_time_white(self) -> int:
         return self.time_white
-    
+
+
     def get_time_black(self) -> int:
         return self.time_black
-    
+
+
     def get_finish(self) -> bool:
         return self.finish
-    
+
+
     def get_board(self) -> Board:
         return self.board
+
 
     def set_finish(self):
         self.finish = True
 
+
     def get_turn(self) -> int:
         return self.turn
     
+
     def set_turn(self, new_turn: int) -> None:
         self.turn = new_turn
+
+
     def get_joueurs(self):
         return self.joueurs
+
 
     def init_game(self) -> None:
         self.board.init_board()
     
+
     def win(self) -> None:
         self.finish = True
+
 
     def current_color(self) -> str:
         if self.turn % 2 == 1:
             return "WHITE" 
         else:
             return "BLACK"
-        
+
+
     def update_clock(self) -> None:
         now = time.time()
         elapsed = now - self.turn_start_time
+
         if self.current_color() == "WHITE":
             self.time_white = max(0, self.time_white - elapsed)    
+
         else:
             self.time_black = max(0, self.time_black - elapsed)
         self.turn_start_time = now
+
         if self.time_white <= 0:
             self.finish = True
             print("White ran out of time. Black wins.")
+
         if self.time_black <= 0:
             self.finish = True
             print("Black ran out of time. White wins.")
     
+
     def allowed_moves(self, position : str) -> list[str]:
         c = self.board.get_case(self.board.translate(position))
         piece = c.get_piece()
+
         if piece is not None:
             l = piece.accessible_spots()
             coords = []
+
             for v in l:
                 coords.append(self.board.roundtrip(v))
             return coords
         return None
-    
+
+
     def allowed_moves_graphic(self, position : str):
         c = self.board.get_case(self.board.translate(position))
         piece = c.get_piece()
+
         if piece is not None:
             l = piece.accessible_spots()
             coords = []
+
             for v in l:
                 coords.append(v)
             return self.board.plateau_terminal(piece)
@@ -102,8 +126,6 @@ class Game:
 
         boolean = self.board.move(cstart, cend)
         return boolean
-    
-    
 
 
     def king_in_danger(self, color: str) -> bool:
@@ -145,7 +167,6 @@ class Game:
 
         danger = game_copy.king_in_danger(player_color)
         return danger
-    
 
 
     def has_legal_move(self, player_color: str) -> bool:
@@ -159,7 +180,7 @@ class Game:
                             if not self.king_in_check_after_move(case.get_pos(), end_pos, player_color):
                                 return True
         return False
-    
+
 
     def is_checkmate(self, player_color: str) -> bool:
         if  self.king_in_danger(player_color) and not self.has_legal_move(player_color):

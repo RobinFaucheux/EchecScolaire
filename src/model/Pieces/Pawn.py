@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..Case import Case
 class Pawn(Piece):
+
     def __init__(self, color : Color, case : Case):
         name = "pawn"
         if color == Color.BLACK:
@@ -15,6 +16,7 @@ class Pawn(Piece):
             self._vectors = [(1, -1), (1, 0), (1, 1), (2, 0)]
         super().__init__(color, case, name, self._vectors)
     
+
     def process_vectors(self) -> list[tuple[int, int]]:
         if self.color == Color.BLACK and self.case.get_pos()[0] != 6 and (-2, 0) in self._vectors:
             self._vectors.remove((-2, 0))
@@ -23,11 +25,10 @@ class Pawn(Piece):
             self._vectors.remove((2, 0))
         return super().process_vectors()
     
+
     def remove_lines_after_piece(self):
         l = super().remove_lines_after_piece()
-
         res = []
-
         d_vectors = {}
         pos = self.case.get_pos()
         for co in l:
@@ -76,6 +77,7 @@ class Pawn(Piece):
                         continue
         return res
     
+
     def move(self, case : Case) -> bool:
         if case.get_pos() in self.accessible_spots():
 
@@ -83,7 +85,7 @@ class Pawn(Piece):
                 if case.get_piece() != None:
                     if case.get_piece().get_name() == "king":
                         case.get_board().get_Game().win()
-                    case.get_piece().remove() # A UPGRADE
+                    case.get_piece().remove()
                 self.case.remove_piece()
                 self.remove()
                 case.add_piece(Queen(Color.BLACK, case))
@@ -92,7 +94,7 @@ class Pawn(Piece):
                 if case.get_piece() != None:
                     if case.get_piece().get_name() == "king":
                         case.get_board().get_Game().win()
-                    case.get_piece().remove() # A UPGRADE
+                    case.get_piece().remove()
                 self.case.remove_piece()
                 self.remove()
                 case.add_piece(Queen(Color.WHITE, case))
@@ -102,7 +104,7 @@ class Pawn(Piece):
             if case.get_piece() != None:
                 if case.get_piece().get_name() == "king":
                     case.get_board().get_Game().win()
-                case.get_piece().remove() # A UPGRADE
+                case.get_piece().remove()
             case.add_piece(self)
             self.case = case
             return True
