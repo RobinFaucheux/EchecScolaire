@@ -30,12 +30,17 @@ def login_player(connexion, players):
     player = db.collect_player(connexion, id)
     player_obj = None
     if player:
+        player_obj = Player(player[0], player[1], player[3])
+        player_obj.set_historical(db.collect_historic_game_of_player(connexion, player_obj))
         print(f"\nWelcome back, {player[1]}! Your ELO: {player[3]}")
-        player_obj = Player(player[0], player[1], player[3], [])
+        historicals = player_obj.get_historical()
+        if historicals != []:
+            print("Your game historicals : ")
+            for game in player_obj.get_historical():
+                print("game :", game["id_game"], "/ opponent :",  game["pseudo_joueur"], "/ result of the game :",  game["result"], "\n", end="")
     else:
         print("\nInvalid ID\n")
     return player_obj
-
 
 def main_menu(connexion) -> list[Player]:
     players = []

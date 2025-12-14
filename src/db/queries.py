@@ -1,7 +1,7 @@
 import sqlalchemy
 from datetime import date
 from model import *
-
+from typing import List, Dict, Union
 
 def register_player(connexion : sqlalchemy.Connection, username : str, password : str) -> int:
     stmt = sqlalchemy.text("insert into PLAYER(pseudo, passwd) VALUES (:pseudo, :passwd) returning idP")
@@ -10,10 +10,10 @@ def register_player(connexion : sqlalchemy.Connection, username : str, password 
     row = res.fetchone()
     return row[0] if row else None
 
-def collect_player(connexion : sqlalchemy.Connection, id : int) -> Player:
-    stmt = sqlalchemy.text("select idP, pseudo, passwd, elo from PLAYER WHERE idP = :id")
+def collect_player(connexion : sqlalchemy.Connection, id : int):
+    stmt = sqlalchemy.text("select idP, pseudo, passwd, elo from PLAYER where idP = :id")
     res = connexion.execute(stmt, {"id": id})
-    row = res.fetchone() 
+    row = res.fetchone()
     return row if row else None
 
 def save_game(connexion : sqlalchemy.Connection) -> int:
@@ -47,3 +47,20 @@ def save_coup(connexion : sqlalchemy.Connection, idG: int, turn: int, start_piec
     stmt1 = sqlalchemy.text("insert into COUP(idG, turn, coup) VALUES (:idG, :turn, :coup)")
     connexion.execute(stmt1, {"idG": idG, "turn": turn, "coup": coup})
     connexion.commit()
+
+def collect_historic_game_of_player(connexion: sqlalchemy.Connection, player: Player) -> List[Dict[str, Union[int, str]]]:
+    historic = []
+    stmt1 = sqlalchemy.text("select idG from PLAY where idP = :idP")
+    res1 = connexion.execute(stmt1, {"idP": player.get_id()})
+    rows1 = res1.fetchall()
+
+    for elem in rows1:
+        stmt2 = sqlalchemy.text("select pseudo, won from PLAY natural join PLAYER where idG = :idG and idP != :idP")
+        res2 = connexion.execute(stmt2, {"idG": elem[0], "idP": player.get_id()})
+        row2 = res2.fetchone()
+
+        if row2 is not None:
+            dico = {"id_game": elem[0], "pseudo_joueur": row2[0], "result": row2[1]}
+            historic.append(dico)
+
+    return historic
