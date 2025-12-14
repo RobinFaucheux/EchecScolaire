@@ -97,17 +97,39 @@ class Session:
                 if game.time_white <= 0 or game.time_black <= 0:
                     self.send("Time is up! Game Over.")
                     break
+            
+
+                if game.is_checkmate(player_color):
+                    self.send("\n" + TEXTE_RED + "CHECKMATE" + RESET)
+                    game.set_finish()
+                    looser = game.get_joueur(pos)
+                    if pos == 0:
+                        winner = game.get_joueur(1)
+                    else:
+                        winner = game.get_joueur(0)
+                    self.send("Player", winner.get_pseudo(), "won!")
+                    self.send("Player", looser.get_pseudo(), "lost!")
+                    return {"result": "checkmate", "winner": winner, "looser": looser}
+
+                if game.is_stalemate(player_color):
+                    self.send("\n" + TEXTE_RED + "STALEMATE" + RESET)
+                    game.set_finish()
+                    self.send("Equality between the player", game.get_joueur(0), "and the player", game.get_joueur(1))
+                    return {"result": "stalemate", "white": game.get_joueur(0), "black": game.get_joueur(1)}
 
                 self.send(f"\n==========================================")
                 self.send(f"Turn {game.get_turn()} - {player.get_pseudo()} ({player_color})")
                 self.send(f"White time: {self.format_time(game.time_white)}")
                 self.send(f"Black time: {self.format_time(game.time_black)}")
+                
                 self.send(self.board.plateau_terminal()) 
                 
                 piece_to_be_moved = ""
                 start_case_piece = None
                 
                 while True:
+                    if (game.king_in_danger(player_color)) :
+                        self.send("Your king is in check")
                     piece_to_be_moved = self.ask_input("Enter the starting square (example: a2)")
                     
                     if piece_to_be_moved is None: return 
@@ -162,11 +184,32 @@ class Session:
 
                     reussi = game.move(piece_to_be_moved, location_input)
                     
+                    if game.king_in_check_after_move(start_case_piece.get_pos(), end_case_piece.get_pos(), player_color):
+                        self.send("Move would put your king in danger! Choose another piece.")
+                        self.send(self.board.plateau_terminal())
+                        break
+
                     if not reussi:
                         self.send("Illegal move! Choose a green box.")
                         continue
                     
                     game.update_clock()
+                    if game.get_time_black() == 0 or game.get_time_white() == 0:
+                        if game.get_time_black() == 0:
+                            self.send("\n" + TEXTE_RED + "player", game.get_joueur(1).get_pseudo(), "time elapse" + RESET)
+                            game.set_finish()
+                            looser = game.get_joueur(1)
+                            winner = game.get_joueur(0)
+                        elif game.get_time_white() == 0:
+                            self.send("\n" + TEXTE_RED + "player", game.get_joueur(0).get_pseudo(), "time elapse" + RESET)
+                            game.set_finish()
+                            looser = game.get_joueur(0)
+                            winner = game.get_joueur(1)
+
+                        self.send("Player", winner.get_pseudo(), "won!")
+                        self.send("Player", looser.get_pseudo(), "lost!")
+                        return {"result": "checkmate", "winner": winner, "looser": looser}
+
                     self.send(f"> {player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}")
                     
                     try:
