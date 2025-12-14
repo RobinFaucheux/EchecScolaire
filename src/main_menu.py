@@ -4,6 +4,17 @@ import sqlalchemy
 
 
 def register_user(connexion: sqlalchemy.Connection) -> None:
+    """
+    Registers a new player in the system.
+
+    - Prompts the user for a username and password.
+    - Validates that the inputs are not empty.
+    - Saves the player in the database.
+    - Displays a success message with the assigned player ID.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection used to register the player.
+    """
     print("\n-- Register --")
     username = input("Enter your username: ").strip()
     while not username:
@@ -21,6 +32,22 @@ def register_user(connexion: sqlalchemy.Connection) -> None:
 
 
 def login_player(connexion: sqlalchemy.Connection, players: list[Player, Player]) -> Player:
+    """
+    Logs in an existing player.
+
+    - Prompts the user for their player ID.
+    - Ensures the ID is not empty and not already used by the other player.
+    - Retrieves player data from the database.
+    - Initializes a Player object with historical game data.
+    - Displays a welcome message and game history if available.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection used to retrieve player info.
+        players (list[Player, Player]): List of already logged-in players to avoid duplicate IDs.
+
+    Returns:
+        Player: The logged-in Player object, or None if the ID was invalid.
+    """
     print("\n-- Log in --")
 
     id = input("Enter your ID: ").strip()
@@ -46,6 +73,20 @@ def login_player(connexion: sqlalchemy.Connection, players: list[Player, Player]
 
 
 def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
+    """
+    Displays the main menu for player selection.
+
+    - Welcomes players to the game.
+    - For each of the two players, allows them to either log in or register.
+    - Ensures valid menu choices are made.
+    - Returns a list containing both Player objects once both have joined.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection used for logging in or registering players.
+
+    Returns:
+        list[Player]: List containing the two Player objects ready to play.
+    """
     players = []
     print("======================================")
     print("       Welcome to ChessSchool")

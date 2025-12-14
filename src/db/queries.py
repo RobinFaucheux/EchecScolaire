@@ -3,21 +3,55 @@ from datetime import date
 from model import *
 from model import Game
 from typing import List, Dict, Union
+from sqlalchemy.engine import Row
+
 
 def register_player(connexion : sqlalchemy.Connection, username : str, password : str) -> int:
+    """
+    Registers a new player in the database.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        username (str): The username of the new player.
+        password (str): The password of the new player.
+
+    Returns:
+        int: The ID of the newly created player.
+    """
     stmt = sqlalchemy.text("insert into PLAYER(pseudo, passwd) VALUES (:pseudo, :passwd) returning idP")
     res = connexion.execute(stmt, {"pseudo": username, "passwd": password})
     connexion.commit()
     row = res.fetchone()
     return row[0] if row else None
 
-def collect_player(connexion : sqlalchemy.Connection, id : int):
+
+def collect_player(connexion : sqlalchemy.Connection, id : int) -> Row:
+    """
+    Retrieves a player's data from the database by ID.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        id (int): The ID of the player to retrieve.
+
+    Returns:
+        Row: The database row containing player data, or None if not found.
+    """
     stmt = sqlalchemy.text("select idP, pseudo, passwd, elo from PLAYER where idP = :id")
     res = connexion.execute(stmt, {"id": id})
     row = res.fetchone()
     return row if row else None
 
+
 def save_game(connexion : sqlalchemy.Connection) -> int:
+    """
+    Saves a new game entry in the database with the current date.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+
+    Returns:
+        int: The ID of the newly created game.
+    """
     today = date.today()
     stmt = sqlalchemy.text("insert into GAME(dateG, stateG) VALUES (:dateG, :stateG) returning idG")
     res = connexion.execute(stmt, {"dateG": today, "stateG": "in progress"})
@@ -25,7 +59,18 @@ def save_game(connexion : sqlalchemy.Connection) -> int:
     row = res.fetchone()
     return row[0] if row else None
 
-def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, player: Player, won: str):
+
+def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, player: Player, won: str) -> None:
+    """
+    Saves the final result of a game, updates player ELO and game state.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        game (Game): The game object being saved.
+        idG (int): The ID of the game.
+        player (Player): The player whose result is being saved.
+        won (str): The result for this player ('won', 'loose', 'equality').
+    """
     final_duration = ((constant.TIMER * constant.ONE_MINUTE_IN_SECONDS - game.get_time_white()) + (constant.TIMER * constant.ONE_MINUTE_IN_SECONDS - game.get_time_black()))
     if game.get_joueur(0).get_id() == player.get_id():
         player_color = "WHITE"
@@ -43,13 +88,35 @@ def save_final_game(connexion : sqlalchemy.Connection, game: Game, idG: int, pla
     connexion.execute(stmt3, {"elo": player.get_elo(),"idP": player.get_id()})
     connexion.commit()
 
-def save_coup(connexion : sqlalchemy.Connection, idG: int, turn: int, start_piece: str, end_piece: str):
+
+def save_coup(connexion : sqlalchemy.Connection, idG: int, turn: int, start_piece: str, end_piece: str) -> None:
+    """
+    Saves a move made in a game to the database.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        idG (int): The ID of the game.
+        turn (int): The turn number.
+        start_piece (str): The starting square of the piece.
+        end_piece (str): The ending square of the piece.
+    """
     coup = start_piece + "/" + end_piece + "\n"
     stmt1 = sqlalchemy.text("insert into COUP(idG, turn, coup) VALUES (:idG, :turn, :coup)")
     connexion.execute(stmt1, {"idG": idG, "turn": turn, "coup": coup})
     connexion.commit()
 
+
 def collect_historic_game_of_player(connexion: sqlalchemy.Connection, player: Player) -> List[Dict[str, Union[int, str]]]:
+    """
+    Retrieves the historical games of a specific player.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        player (Player): The player whose history is being retrieved.
+
+    Returns:
+        List[Dict[str, Union[int, str]]]: A list of dictionaries containing game ID, opponent's pseudo, and result.
+    """
     historic = []
     stmt1 = sqlalchemy.text("select idG from PLAY where idP = :idP")
     res1 = connexion.execute(stmt1, {"idP": player.get_id()})

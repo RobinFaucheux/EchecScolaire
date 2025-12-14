@@ -9,6 +9,15 @@ init()
 
 
 def main():
+    """
+    Main entry point for the Chess game application.
+
+    - Calls the main menu to log in or register two players.
+    - Initializes a new game and the board.
+    - Runs the game loop until the game finishes.
+    - Updates and saves ELO ratings for players based on the game result.
+    - Displays the final board and messages about the game's outcome.
+    """
     players = menu.main_menu(connexion)
     id_game = queries.save_game(connexion)
     g = Game(id_game, players[0], players[1])
@@ -46,7 +55,7 @@ def main():
             
             queries.save_final_game(connexion, g, id_game, dico["white"], 'equality')
             queries.save_final_game(connexion, g, id_game, dico["black"], 'equality')
-            print("Result of game saved!")
+            print("Result of the game saved!")
 
 
 if __name__ == "__main__":

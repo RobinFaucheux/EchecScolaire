@@ -5,11 +5,39 @@ from typing import Dict, Type, Union
 
 
 def format_time(seconds: float) -> str:
+    """
+    Converts a time in seconds to a MM:SS string format.
+
+    Args:
+        seconds (float): Time in seconds.
+
+    Returns:
+        str: Formatted time as "MM:SS".
+    """
     seconds = max(0, int(seconds))
     return f"{seconds // 60:02}:{seconds % 60:02}"
 
 
 def play_turn(connexion: sqlalchemy.Connection, board: Board) -> Dict[str, Union[Type[Player], str]]:
+    """
+    Executes a single turn for the current player.
+
+    - Displays the board and player info.
+    - Checks for check, checkmate, or stalemate conditions.
+    - Prompts the player to select a piece and a destination square.
+    - Validates moves and prevents moves putting own king in check.
+    - Updates game clock and turn.
+    - Saves the move to the database.
+    - Returns a dictionary with the game result if the game ends.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection to save moves.
+        board (Board): The current game board.
+
+    Returns:
+        Dict[str, Union[Type[Player], str]]: Contains information about the result if the game ended
+            (checkmate, stalemate, or timeout) and the players involved.
+    """
     game = board.get_Game()
     player_color = game.current_color()
     if player_color == "WHITE":

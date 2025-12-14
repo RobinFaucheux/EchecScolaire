@@ -6,7 +6,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..Case import Case
+
 class Pawn(Piece):
+    """
+    Represents a pawn chess piece.
+
+    Attributes:
+        color (Color): The color of the pawn (WHITE or BLACK).
+        case (Case): The board square where the pawn is placed.
+        _vectors (list[tuple[int, int]]): Possible movement vectors including standard moves, captures, and double advance on first move.
+    """
 
     def __init__(self, color : Color, case : Case):
         name = "pawn"
@@ -18,6 +27,15 @@ class Pawn(Piece):
     
 
     def process_vectors(self) -> list[tuple[int, int]]:
+        """
+        Adjusts the pawn's movement vectors based on its current position.
+        
+        - Removes the two-square forward move if the pawn is not on its starting rank.
+        - Calls the parent class to process other vector rules.
+        
+        Returns:
+            list[tuple[int, int]]: The list of adjusted movement vectors.
+        """
         if self.color == Color.BLACK and self.case.get_pos()[0] != 6 and (-2, 0) in self._vectors:
             self._vectors.remove((-2, 0))
             
@@ -27,6 +45,15 @@ class Pawn(Piece):
     
 
     def remove_lines_after_piece(self) -> list:
+        """
+        Filters potential moves according to pawn-specific rules.
+        
+        - Handles diagonal captures only if an opponent piece is present.
+        - Ensures forward moves are allowed only if the square is empty.
+        
+        Returns:
+            list: List of board coordinates (tuples) where the pawn can legally move.
+        """
         l = super().remove_lines_after_piece()
         res = []
         d_vectors = {}
@@ -79,6 +106,19 @@ class Pawn(Piece):
     
 
     def move(self, case : Case) -> bool:
+        """
+        Attempts to move the pawn to a given square.
+        
+        - Handles normal forward moves, diagonal captures, and promotion to a Queen.
+        - Removes captured pieces if present.
+        - Updates the pawn's current square.
+        
+        Args:
+            case (Case): The target square to move to.
+        
+        Returns:
+            bool: True if the move was successful, False otherwise.
+        """
         if case.get_pos() in self.accessible_spots():
 
             if self.color == Color.BLACK and case.get_pos()[0] == 0:
@@ -111,7 +151,7 @@ class Pawn(Piece):
                     case.get_board().get_Game().win()
 
                 case.get_piece().remove()
-                
+
             case.add_piece(self)
             self.case = case
             return True

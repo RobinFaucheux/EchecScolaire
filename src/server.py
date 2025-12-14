@@ -8,12 +8,25 @@ init()
 
 
 class serveur:
+    """
+    Represents a chess server.
+
+    Attributes:
+        counter (int): A counter for tracking connections or sessions (currently unused).
+    """
 
     def __init__(self):
         self.counter = 0
 
 
     def mainServer(self, port):
+        """
+        Starts the server and listens for incoming client connections.
+
+        - Binds to the specified port and waits for a client to connect.
+        - Creates a Session object for the connected client.
+        - Handles exceptions and ensures the socket is closed on exit.
+        """
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
@@ -49,6 +62,17 @@ class serveur:
 
 
 class Session:
+    """
+    Represents a single game session between the server and a client.
+
+    Attributes:
+        server (serveur): Reference to the parent server.
+        socket (socket.socket): The socket connected to the client.
+        file (TextIO): A file-like wrapper around the socket for reading/writing text.
+        game (Game): The chess game being played in this session.
+        board (Board): The game board for the current session.
+    """
+    
     def __init__(self, serveur, sock):
         self.server = serveur
         self.socket = sock
@@ -67,11 +91,26 @@ class Session:
 
 
     def format_time(self, seconds: float) -> str:
+        """
+        Converts a number of seconds into a MM:SS string format.
+
+        Args:
+            seconds (float): The number of seconds.
+
+        Returns:
+            str: The formatted time string as MM:SS.
+        """
         seconds = max(0, int(seconds))
         return f"{seconds // 60:02}:{seconds % 60:02}"
 
 
     def send(self, message):
+        """
+        Sends a message to the client through the socket.
+
+        Args:
+            message (str): The message to send.
+        """
         try:
             self.file.write(message + "\n")
             self.file.flush()
@@ -80,6 +119,15 @@ class Session:
 
 
     def ask_input(self, prompt):
+        """
+        Sends a prompt to the client and reads their input.
+
+        Args:
+            prompt (str): The message to display to the client.
+
+        Returns:
+            str | None: The client's response, lowercased and stripped, or None if connection is closed.
+        """
         try:
             self.file.write(prompt + "\nEntree : \n") 
             self.file.flush()
@@ -93,6 +141,14 @@ class Session:
 
 
     def mainSession(self):
+        """
+        Main loop for a single game session with a client.
+
+        - Alternates turns between players until the game ends.
+        - Handles move input validation, checks for illegal moves, and updates the game board.
+        - Updates player clocks and sends board and game status updates to the client.
+        - Saves moves and final game results to the database.
+        """
         game = self.game
         
         try:

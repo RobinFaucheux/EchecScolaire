@@ -1,10 +1,5 @@
 import sqlalchemy
 from sqlalchemy import inspect, text
-# pour avoir sqlalchemy :
-# sudo apt-get update 
-# sudo apt-get install python3-sqlalchemy
-# pip3 install mysql-connector-python
-
 from dotenv import load_dotenv
 import os
 import platform
@@ -18,15 +13,13 @@ DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
 DB_DRIVER = os.getenv("DB_DRIVER")
 
+
 def open_connexion():
     """
-    ouverture d'une connexion MySQL
-    paramètres:
-       user     (str) le login MySQL de l'utilsateur
-       passwd   (str) le mot de passe MySQL de l'utilisateur
-       host     (str) le nom ou l'adresse IP de la machine hébergeant le serveur MySQL
-       database (str) le nom de la base de données à utiliser
-    résultat: l'objet qui gère le connection MySQL si tout s'est bien passé
+    Opens a connection to the MySQL database using environment variables.
+
+    Returns:
+        sqlalchemy.Connection: The connection object for interacting with the database.
     """
     try:
         engine = sqlalchemy.create_engine(f'{DB_DRIVER}://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}')
@@ -37,12 +30,29 @@ def open_connexion():
     print("connection successful")
     return connexion
 
-def database_already_initialized(connexion) -> bool:
+
+def database_already_initialized(connexion: sqlalchemy.Connection) -> bool:
+    """
+    Checks if the database already contains tables.
+
+    Args:
+        connexion (sqlalchemy.Connection): The database connection to inspect.
+
+    Returns:
+        bool: True if the database contains any tables, False otherwise.
+    """
     inspector = inspect(connexion)
     tables = inspector.get_table_names()
     return not (len(tables) == 0)
 
-def create_database(connexion):
+
+def create_database(connexion: sqlalchemy.Connection) -> None:
+    """
+    Initializes the database by executing the SQL statements in 'db/creation.sql'.
+
+    Args:
+        connexion (sqlalchemy.Connection): The database connection to use for executing the statements.
+    """
     path = "db/creation.sql"
     with open(path, "r", encoding="utf8") as f:
         sql = f.read()

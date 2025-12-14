@@ -15,9 +15,19 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .Game import Game
-    
 
 class Board:
+    """
+    Represents a chessboard with all squares and pieces.
+
+    Attributes:
+        width (int): The number of columns on the board.
+        height (int): The number of rows on the board.
+        game (Game): The game instance this board belongs to.
+        cases (list[list[Case]]): 2D grid of board squares.
+        white_king_piece (King | None): Reference to the white king piece.
+        black_king_piece (King | None): Reference to the black king piece.
+    """
 
     def __init__(self, game : Game, width = WIDHT_BOARD, height = HEIGHT_BOARD):
         self.width = width
@@ -30,6 +40,11 @@ class Board:
 
 
     def init_board(self) -> None:
+        """
+        Initializes the chessboard with alternating colored squares.
+
+        Creates all `Case` instances for the board and arranges them in a 2D grid.
+        """
         for i in range(self.height):
             l = []
             for j in range(self.width):
@@ -47,7 +62,13 @@ class Board:
 
 
     def init_pieces(self) -> None:
-        
+        """
+        Places all chess pieces in their starting positions on the board.
+
+        - Pawns are placed on the second and seventh ranks.
+        - Rooks, Knights, Bishops, Queen, and King are placed on the first and last ranks.
+        - Updates references to the white and black kings.
+        """
         for i in range(self.width):
             case = self.get_case((1, i))
             pawn = Pawn(Color.WHITE, case)
@@ -101,36 +122,96 @@ class Board:
 
 
     def in_board(self, pos : tuple) -> bool:
+        """
+        Checks if a given position is within the board boundaries.
+
+        Args:
+            pos (tuple[int, int]): The coordinates to check.
+
+        Returns:
+            bool: True if the position is inside the board, False otherwise.
+        """
         return 0 <= pos[0] < self.height and 0 <= pos[1] < self.width
 
 
     def case_in_board(self, case : Case) -> bool:
+        """
+        Checks if a given board square (Case) is within the board boundaries.
+
+        Args:
+            case (Case): The square to check.
+
+        Returns:
+            bool: True if the square is inside the board, False otherwise.
+        """
         return self.in_board(case.get_pos())
 
 
     def get_cases(self) -> list[list[Case]]:
+        """
+        Returns the full 2D grid of board squares.
+
+        Returns:
+            list[list[Case]]: All cases on the board.
+        """
         return self.cases
 
 
     def get_case(self, pos : tuple) -> Case:
+        """
+        Retrieves the Case object at the specified coordinates.
+
+        Args:
+            pos (tuple[int, int]): Coordinates of the square.
+
+        Returns:
+            Case | None: The square at the position, or None if out of bounds.
+        """
         if self.in_board(pos):
             return self.cases[pos[0]][pos[1]]
         return None
 
 
     def get_white_king(self) -> 'King': 
+        """
+        Returns the white king piece.
+
+        Returns:
+            King | None: Reference to the white king on the board.
+        """
         return self.white_king_piece 
 
 
-    def get_black_king(self) -> 'King': 
+    def get_black_king(self) -> 'King':
+        """
+        Returns the black king piece.
+
+        Returns:
+            King | None: Reference to the black king on the board.
+        """
         return self.black_king_piece
 
 
     def get_Game(self) -> Game:
+        """
+        Returns the game instance this board belongs to.
+
+        Returns:
+            Game: The parent game object.
+        """
         return self.game
 
 
     def translate(self, chain : str) -> tuple[int, int]:
+        """
+        Converts a board coordinate string (e.g., 'a2') to numeric indices.
+
+        Args:
+            chain (str): The board position in algebraic notation.
+
+        Returns:
+            tuple[int, int] | None: Corresponding (row, column) indices, or None if invalid.
+        """
         try:
             x = chain[0]
             y = int(chain[1:]) - 1
@@ -144,6 +225,15 @@ class Board:
 
 
     def roundtrip(self, pos : tuple) -> str:
+        """
+        Converts numeric board indices back to algebraic notation (e.g., (1,0) -> 'a2').
+
+        Args:
+            pos (tuple[int, int]): The numeric position.
+
+        Returns:
+            str: The position in algebraic notation.
+        """
         try:
             y = pos[0] + 1
             x = pos[1]
@@ -157,6 +247,18 @@ class Board:
 
 
     def move(self, start : Case, end : Case) -> bool:
+        """
+        Moves a piece from the start Case to the end Case.
+
+        Updates the board's reference if a king is moved.
+
+        Args:
+            start (Case): The starting square.
+            end (Case): The target square.
+
+        Returns:
+            bool: True if the move was successful, False otherwise.
+        """
         success = start.get_piece().move(end)
 
         if success:
@@ -170,6 +272,19 @@ class Board:
 
 
     def plateau_terminal(self, piece : Piece = None):
+        """
+        Displays the current board state in the terminal.
+
+        Highlights:
+            - The selected piece in red.
+            - Accessible squares for the selected piece in green.
+
+        Args:
+            piece (Piece | None): Optional piece to highlight moves for.
+
+        Returns:
+            str: The string representation of the board.
+        """
         cases = self.get_cases()
         draw = []
         green_cases = []
