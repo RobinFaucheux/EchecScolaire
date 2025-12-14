@@ -1,5 +1,6 @@
 from .Player import Player
 from .Board import Board
+from .Case import Case
 import time
 from .constant import *
 
@@ -99,3 +100,22 @@ class Game:
 
         boolean = self.board.move(cstart, cend)
         return boolean
+    
+
+    def case_is_attacked(self, case: Case):
+        color_piece = case.get_piece().get_color().name
+
+        list_accessible_spots = case.get_piece().accessible_spots()
+        print(list_accessible_spots)
+        
+        for row in (self.board.get_cases()):
+            for other_case in row:
+                if other_case.get_piece() != None:
+                    if other_case.get_piece().get_color().name != color_piece:
+                        other_list_accessible_spots = other_case.get_piece().accessible_spots()
+                        for other_accessible_spot in other_list_accessible_spots:
+                            for accessible_spot in list_accessible_spots:
+                                if accessible_spot == other_accessible_spot:
+                                    list_accessible_spots.remove(accessible_spot)
+
+        print(list_accessible_spots)

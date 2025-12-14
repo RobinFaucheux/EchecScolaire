@@ -24,8 +24,14 @@ def main():
 
     board = g.get_board()
 
-    # while not g.get_finish():
-    #     game.play_turn(connexion, board)
+    while not g.get_finish():
+        game.play_turn(connexion, board)
+        for row in (board.get_cases()):
+            for case in row:
+                if case.get_piece() != None:
+                    if case.get_piece().get_name() == "king":
+                        color = case.get_piece().get_color().name
+                        print("king", color, ":", g.case_is_attacked(case))
 
     board.plateau_terminal()
 

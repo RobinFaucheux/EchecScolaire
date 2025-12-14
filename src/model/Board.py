@@ -95,7 +95,7 @@ class Board:
     def case_in_board(self, case : Case) -> bool:
         return self.in_board(case.get_pos())
     
-    def get_cases(self) -> list[Case]:
+    def get_cases(self) -> list[list[Case]]:
         return self.cases
 
     def get_case(self, pos : tuple) -> Case:

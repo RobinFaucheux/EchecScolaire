@@ -76,9 +76,6 @@ class Piece:
                         # If the target is strictly further away than the blocker, remove it
                         if dist_target_sq > dist_blocker_sq:
                             l_coords.remove(coo_target)
-        for coo in l_coords:
-            print(self.case.get_board().roundtrip(coo), end=', ')
-        print()
         return l_coords
 
     def accessible_spots(self) -> list[tuple[int, int]]:
