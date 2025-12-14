@@ -42,6 +42,8 @@ class Game:
     
     def set_turn(self, new_turn: int) -> None:
         self.turn = new_turn
+    def get_joueurs(self):
+        return self.joueurs
 
     def init_game(self) -> None:
         self.board.init_board()

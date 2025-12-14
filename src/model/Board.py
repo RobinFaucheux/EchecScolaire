@@ -116,6 +116,8 @@ class Board:
             x = letters.index(x)
             return y,x
         except:
+            # return None to signal invalid coordinates to caller
+            return None
             print("Wrong coordinates")
         
     def roundtrip(self, pos : tuple) -> str:
