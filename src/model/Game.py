@@ -47,7 +47,7 @@ class Game:
         self.board.init_board()
     
     def win(self) -> None:
-        self.victory = True
+        self.finish = True
 
     def current_color(self) -> str:
         if self.turn % 2 == 1:
@@ -89,7 +89,7 @@ class Game:
             coords = []
             for v in l:
                 coords.append(v)
-            self.board.plateau_terminal(coords)
+            self.board.plateau_terminal(piece)
         
     
 

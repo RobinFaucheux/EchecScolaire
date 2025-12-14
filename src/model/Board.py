@@ -1,4 +1,6 @@
-from __future__ import annotations  # <--- Magic line
+from __future__ import annotations
+
+from model.Pieces import Piece  # <--- Magic line
 
 from .Color import Color
 from .Pieces.Pawn import Pawn
@@ -133,26 +135,31 @@ class Board:
     def move(self, start : Case, end : Case) -> bool:
         return start.get_piece().move(end)
     
-    def plateau_terminal(self, green_cases : list[tuple[int, int]] = []):
+    def plateau_terminal(self, piece : Piece = None):
         cases = self.get_cases()
         draw = []
+        green_cases = []
+        if piece != None:
+            green_cases = piece.accessible_spots()
         draw.append("\n")
         cpt = self.height
         for row in reversed(cases):
             draw.append(" " + str(cpt) + " ")
             for case in row:
-                piece = " "
+                display_piece = " "
                 if case.get_piece() is not None:
                     piece_obj = case.get_piece()
                     key = (piece_obj.get_name(), piece_obj.get_color().name)
-                    piece = PIECE_SYMBOLS.get(key)
+                    display_piece = PIECE_SYMBOLS.get(key)
                 if case.get_pos() in green_cases:
-                    draw.append(BACKGROUND_GREEN + TEXTE_BLACK + " " + piece + " " + RESET)
+                    draw.append(BACKGROUND_GREEN + TEXTE_BLACK + " " + display_piece + " " + RESET)
+                elif piece != None and case.get_pos() == piece.get_case().get_pos():
+                    draw.append(BACKGROUND_RED + TEXTE_BLACK + " " + display_piece + " " + RESET)
                 else:
                     if case.get_color().name == "WHITE":
-                        draw.append(BACKGROUND_WHITE + TEXTE_BLACK + " " + piece + " " + RESET)
+                        draw.append(BACKGROUND_WHITE + TEXTE_BLACK + " " + display_piece + " " + RESET)
                     else:
-                        draw.append(BACKGROUND_BLUE + TEXTE_BLACK + " " + piece + " " + RESET)
+                        draw.append(BACKGROUND_BLUE + TEXTE_BLACK + " " + display_piece + " " + RESET)
             draw.append("\n")
             cpt -= 1
         draw.append("    a  b  c  d  e  f  g  h  ")

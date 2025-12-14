@@ -15,5 +15,6 @@ class Bishop(Piece):
     
     def init_vectors(self):
         for i in range (-7, 7):
-            self._vectors.append((i, i))
-            self._vectors.append((-i, i))
+            if i!=0:
+                self._vectors.append((i, i))
+                self._vectors.append((-i, i))
