@@ -5,6 +5,7 @@ import time
 from .constant import *
 from copy import deepcopy
 
+
 class Game:
     """
     Represents a chess game, managing players, board state, turns, clocks, and game rules.
@@ -31,7 +32,6 @@ class Game:
         self.time_black = TIMER * ONE_MINUTE_IN_SECONDS
         self.turn_start_time = time.time()
 
-
     def get_joueur(self, pos: int) -> Player:
         """
         Returns the player at the specified position.
@@ -40,7 +40,6 @@ class Game:
             Player: The player object at index pos.
         """
         return self.joueurs[pos]
-
 
     def get_idG(self) -> int:
         """
@@ -51,7 +50,6 @@ class Game:
         """
         return self.idG
 
-
     def get_time_white(self) -> int:
         """
         Returns the remaining time for the white player.
@@ -60,7 +58,6 @@ class Game:
             int: Time in seconds.
         """
         return self.time_white
-
 
     def get_time_black(self) -> int:
         """
@@ -71,7 +68,6 @@ class Game:
         """
         return self.time_black
 
-
     def get_finish(self) -> bool:
         """
         Checks if the game has finished.
@@ -80,7 +76,6 @@ class Game:
             bool: True if the game is finished, False otherwise.
         """
         return self.finish
-
 
     def get_board(self) -> Board:
         """
@@ -91,13 +86,11 @@ class Game:
         """
         return self.board
 
-
     def set_finish(self) -> None:
         """
         Sets the game as finished.
         """
         self.finish = True
-
 
     def get_turn(self) -> int:
         """
@@ -107,7 +100,6 @@ class Game:
             int: The current turn.
         """
         return self.turn
-    
 
     def set_turn(self, new_turn: int) -> None:
         """
@@ -118,7 +110,6 @@ class Game:
         """
         self.turn = new_turn
 
-
     def get_joueurs(self) -> list[Player, Player]:
         """
         Returns the list of players.
@@ -128,20 +119,17 @@ class Game:
         """
         return self.joueurs
 
-
     def init_game(self) -> None:
         """
         Initializes the board for a new game.
         """
         self.board.init_board()
-    
 
     def win(self) -> None:
         """
         Marks the game as won and finished.
         """
         self.finish = True
-
 
     def current_color(self) -> str:
         """
@@ -151,10 +139,9 @@ class Game:
             str: "WHITE" or "BLACK".
         """
         if self.turn % 2 == 1:
-            return "WHITE" 
+            return "WHITE"
         else:
             return "BLACK"
-
 
     def update_clock(self) -> None:
         """
@@ -164,7 +151,7 @@ class Game:
         elapsed = now - self.turn_start_time
 
         if self.current_color() == "WHITE":
-            self.time_white = max(0, self.time_white - elapsed)    
+            self.time_white = max(0, self.time_white - elapsed)
 
         else:
             self.time_black = max(0, self.time_black - elapsed)
@@ -177,9 +164,8 @@ class Game:
         if self.time_black <= 0:
             self.finish = True
             print("Black ran out of time. White wins.")
-    
 
-    def allowed_moves(self, position : str) -> list[str]:
+    def allowed_moves(self, position: str) -> list[str]:
         """
         Returns all accessible moves for the piece at the given position.
 
@@ -201,8 +187,7 @@ class Game:
             return coords
         return None
 
-
-    def allowed_moves_graphic(self, position : str):
+    def allowed_moves_graphic(self, position: str):
         """
         Displays the board highlighting allowed moves for the piece at the given position.
 
@@ -219,9 +204,8 @@ class Game:
             for v in l:
                 coords.append(v)
             return self.board.plateau_terminal(piece)
-        
 
-    def move(self, start : str, end : str) -> bool:
+    def move(self, start: str, end: str) -> bool:
         """
         Moves a piece from the start square to the end square.
 
@@ -237,7 +221,6 @@ class Game:
 
         boolean = self.board.move(cstart, cend)
         return boolean
-
 
     def king_in_danger(self, color: str) -> bool:
         """
@@ -260,14 +243,15 @@ class Game:
                 if other_case.get_piece() != None:
                     if other_case.get_piece().get_color().name != color:
 
-                        other_list_accessible_spots = other_case.get_piece().accessible_spots()
+                        other_list_accessible_spots = other_case.get_piece(
+                        ).accessible_spots()
                         for other_accessible_spot in other_list_accessible_spots:
-                           if other_accessible_spot == pos:
+                            if other_accessible_spot == pos:
                                 return True
         return False
 
-
-    def king_in_check_after_move(self, start_pos: tuple, end_pos: tuple, player_color: str) -> bool:
+    def king_in_check_after_move(self, start_pos: tuple, end_pos: tuple,
+                                 player_color: str) -> bool:
         """
         Simulates a move and checks if the king would be in danger afterward.
 
@@ -289,7 +273,7 @@ class Game:
         start_case.set_piece(None)
         end_case.set_piece(moving_piece)
         moving_piece.set_case(end_case)
-        
+
         if moving_piece.get_name() == "King":
             if moving_piece.get_color().name == "WHITE":
                 board_copy.white_king_piece = moving_piece
@@ -298,7 +282,6 @@ class Game:
 
         danger = game_copy.king_in_danger(player_color)
         return danger
-
 
     def has_legal_move(self, player_color: str) -> bool:
         """
@@ -317,10 +300,10 @@ class Game:
                     if piece.get_color().name == player_color:
 
                         for end_pos in piece.accessible_spots():
-                            if not self.king_in_check_after_move(case.get_pos(), end_pos, player_color):
+                            if not self.king_in_check_after_move(
+                                    case.get_pos(), end_pos, player_color):
                                 return True
         return False
-
 
     def is_checkmate(self, player_color: str) -> bool:
         """
@@ -332,10 +315,10 @@ class Game:
         Returns:
             bool: True if the player is checkmated.
         """
-        if  self.king_in_danger(player_color) and not self.has_legal_move(player_color):
+        if self.king_in_danger(
+                player_color) and not self.has_legal_move(player_color):
             return True
         return False
-
 
     def is_stalemate(self, player_color: str) -> bool:
         """
@@ -347,6 +330,7 @@ class Game:
         Returns:
             bool: True if the player is stalemated.
         """
-        if not self.king_in_danger(player_color) and not self.has_legal_move(player_color):
+        if not self.king_in_danger(player_color) and not self.has_legal_move(
+                player_color):
             return True
         return False

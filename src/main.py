@@ -5,6 +5,7 @@ import model.constant as cons
 import main_menu as menu
 import main_game as game
 from colorama import init
+
 init()
 
 
@@ -41,9 +42,11 @@ def main():
 
             dico["winner"].calculate_elo(old_elo_player_lost, "won")
             dico["looser"].calculate_elo(old_elo_player_won, "loose")
-            
-            queries.save_final_game(connexion, g, id_game, dico["winner"], 'won')
-            queries.save_final_game(connexion, g, id_game, dico["looser"], 'loose')
+
+            queries.save_final_game(connexion, g, id_game, dico["winner"],
+                                    'won')
+            queries.save_final_game(connexion, g, id_game, dico["looser"],
+                                    'loose')
             print("Result of game saved!")
 
         elif dico["result"] == "stalemate":
@@ -52,9 +55,11 @@ def main():
 
             dico["white"].calculate_elo(old_elo_player_black, "equality")
             dico["black"].calculate_elo(old_elo_player_white, "equality")
-            
-            queries.save_final_game(connexion, g, id_game, dico["white"], 'equality')
-            queries.save_final_game(connexion, g, id_game, dico["black"], 'equality')
+
+            queries.save_final_game(connexion, g, id_game, dico["white"],
+                                    'equality')
+            queries.save_final_game(connexion, g, id_game, dico["black"],
+                                    'equality')
             print("Result of the game saved!")
 
 

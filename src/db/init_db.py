@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import os
 import platform
 
-
 load_dotenv()
 
 DB_USER = os.getenv("DB_USER")
@@ -22,7 +21,8 @@ def open_connexion():
         sqlalchemy.Connection: The connection object for interacting with the database.
     """
     try:
-        engine = sqlalchemy.create_engine(f'{DB_DRIVER}://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}')
+        engine = sqlalchemy.create_engine(
+            f'{DB_DRIVER}://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}')
         connexion = engine.connect()
     except Exception as err:
         print(err)

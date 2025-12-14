@@ -4,6 +4,7 @@ import sys
 HOST = "127.0.0.1"
 PORT = 5555
 
+
 def main_client():
     """
     A simple TCP client that connects to a server at a specified host and port.
@@ -26,18 +27,18 @@ def main_client():
     try:
         while True:
             line = f.readline()
-            
+
             if not line:
                 print("Server closed connection.")
                 break
-            
+
             print(line, end="")
 
             if "Entree : " in line:
                 user_input = input()
                 f.write(user_input + "\n")
                 f.flush()
-                
+
                 if user_input.lower() == "quit":
                     break
 
@@ -45,6 +46,7 @@ def main_client():
         print("\nClient exiting...")
     finally:
         sock.close()
+
 
 if __name__ == "__main__":
     main_client()

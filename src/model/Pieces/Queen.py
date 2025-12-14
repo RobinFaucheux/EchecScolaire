@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..Case import Case
 
+
 class Queen(Piece):
     """
     Represents a queen chess piece.
@@ -16,12 +17,11 @@ class Queen(Piece):
         _vectors (list[tuple[int, int]]): Possible movement vectors in all straight and diagonal directions.
     """
 
-    def __init__(self, color : Color, case : Case):
+    def __init__(self, color: Color, case: Case):
         name = "queen"
         self._vectors = []
         self.init_vectors()
         super().__init__(color, case, name, self._vectors)
-
 
     def init_vectors(self) -> None:
         """
@@ -30,7 +30,7 @@ class Queen(Piece):
         - Combines diagonal and straight line movements in all directions.
         - Excludes the (0, 0) vector to prevent no movement.
         """
-        for i in range (-7, 7):
+        for i in range(-7, 7):
             if i != 0:
                 self._vectors.append((i, i))
                 self._vectors.append((0, i))

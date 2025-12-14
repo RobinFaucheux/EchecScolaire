@@ -2,6 +2,7 @@ from math import ceil
 from .constant import *
 from typing import List, Dict, Union
 
+
 class Player:
     """
     Represents a chess player with an ELO rating and historical game records.
@@ -13,12 +14,15 @@ class Player:
         historical (List[Dict[str, Union[int, str]]]): A list of historical games with details.
     """
 
-    def __init__(self, id: int, pseudo: str, elo: float, historical: List[Dict[str, Union[int, str]]] = []):
+    def __init__(self,
+                 id: int,
+                 pseudo: str,
+                 elo: float,
+                 historical: List[Dict[str, Union[int, str]]] = []):
         self.id = id
         self.pseudo = pseudo
         self.elo = elo
         self.historical = historical
-
 
     def get_id(self) -> int:
         """
@@ -29,7 +33,6 @@ class Player:
         """
         return self.id
 
-
     def get_pseudo(self) -> str:
         """
         Returns the player's pseudonym.
@@ -38,7 +41,6 @@ class Player:
             str: The player's pseudo.
         """
         return self.pseudo
-
 
     def get_elo(self) -> int:
         """
@@ -49,8 +51,7 @@ class Player:
         """
         return self.elo
 
-
-    def get_historical(self) -> List[Dict[str, Union[int, str]]] :
+    def get_historical(self) -> List[Dict[str, Union[int, str]]]:
         """
         Returns the player's historical game records.
 
@@ -59,8 +60,8 @@ class Player:
         """
         return self.historical
 
-
-    def set_historical(self, historical: List[Dict[str, Union[int, str]]]) -> None:
+    def set_historical(self, historical: List[Dict[str, Union[int,
+                                                              str]]]) -> None:
         """
         Updates the player's historical game records.
 
@@ -68,7 +69,6 @@ class Player:
             historical (List[Dict[str, Union[int, str]]]): The new historical records.
         """
         self.historical = historical
-
 
     def set_elo(self, new_elo: int) -> None:
         """
@@ -79,7 +79,6 @@ class Player:
         """
         self.elo = new_elo
 
-
     def calculate_elo(self, elo_other_player: int, won: str) -> None:
         """
         Updates the player's ELO after a game against another player.
@@ -89,9 +88,9 @@ class Player:
             won (str): The game result: "won", "equality", or "loose".
         """
         k = COEFF_SENSIBILITE_ELO
-        expected_score = 1 / (1 + 10**((self.elo - elo_other_player)/400))
+        expected_score = 1 / (1 + 10**((self.elo - elo_other_player) / 400))
         if won == "won":
-            real_score = 1 
+            real_score = 1
         elif won == "equality":
             real_score = 0.5
         elif won == "loose":

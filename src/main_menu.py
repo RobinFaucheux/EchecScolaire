@@ -31,7 +31,8 @@ def register_user(connexion: sqlalchemy.Connection) -> None:
     input()
 
 
-def login_player(connexion: sqlalchemy.Connection, players: list[Player, Player]) -> Player:
+def login_player(connexion: sqlalchemy.Connection,
+                 players: list[Player, Player]) -> Player:
     """
     Logs in an existing player.
 
@@ -60,13 +61,21 @@ def login_player(connexion: sqlalchemy.Connection, players: list[Player, Player]
     player_obj = None
     if player:
         player_obj = Player(player[0], player[1], player[3])
-        player_obj.set_historical(db.collect_historic_game_of_player(connexion, player_obj))
+        player_obj.set_historical(
+            db.collect_historic_game_of_player(connexion, player_obj))
         print(f"\nWelcome back, {player[1]}! Your ELO: {player[3]}")
         historicals = player_obj.get_historical()
         if historicals != []:
             print("Your game historicals : ")
             for game in player_obj.get_historical():
-                print("game :", game["id_game"], "/ opponent :",  game["pseudo_joueur"], "/ result of the game :",  game["result"], "\n", end="")
+                print("game :",
+                      game["id_game"],
+                      "/ opponent :",
+                      game["pseudo_joueur"],
+                      "/ result of the game :",
+                      game["result"],
+                      "\n",
+                      end="")
     else:
         print("\nInvalid ID\n")
     return player_obj
@@ -106,7 +115,7 @@ def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
             if choice == "1":
                 player = login_player(connexion, players)
                 if player:
-                    players.append(player)        
+                    players.append(player)
                     input()
                     break
             elif choice == "2":
@@ -114,7 +123,9 @@ def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
             else:
                 print("Goodbye!")
                 exit()
-    
+
     print("\nBoth players are ready!")
-    print(f"Player 1 : {players[0].get_pseudo()}, Player 2 : {players[1].get_pseudo()}")
+    print(
+        f"Player 1 : {players[0].get_pseudo()}, Player 2 : {players[1].get_pseudo()}"
+    )
     return players

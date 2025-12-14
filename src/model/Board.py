@@ -9,12 +9,13 @@ from .Pieces.Bishop import Bishop
 from .Pieces.Queen import Queen
 from .Pieces.King import King
 from .Case import Case
-from .constant import * 
+from .constant import *
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .Game import Game
+
 
 class Board:
     """
@@ -29,7 +30,7 @@ class Board:
         black_king_piece (King | None): Reference to the black king piece.
     """
 
-    def __init__(self, game : Game, width = WIDHT_BOARD, height = HEIGHT_BOARD):
+    def __init__(self, game: Game, width=WIDHT_BOARD, height=HEIGHT_BOARD):
         self.width = width
         self.height = height
         self.game = game
@@ -37,7 +38,6 @@ class Board:
         self.init_board()
         self.white_king_piece = None
         self.black_king_piece = None
-
 
     def init_board(self) -> None:
         """
@@ -48,18 +48,17 @@ class Board:
         for i in range(self.height):
             l = []
             for j in range(self.width):
-                if (i%2 == 0):
-                    if j%2==0:
+                if (i % 2 == 0):
+                    if j % 2 == 0:
                         l.append(Case((i, j), Color.BLACK, self))
                     else:
                         l.append(Case((i, j), Color.WHITE, self))
                 else:
-                    if j%2==1:
+                    if j % 2 == 1:
                         l.append(Case((i, j), Color.BLACK, self))
                     else:
                         l.append(Case((i, j), Color.WHITE, self))
             self.cases.append(l)
-
 
     def init_pieces(self) -> None:
         """
@@ -80,32 +79,17 @@ class Board:
             case.add_piece(pawn)
 
         pieces: list[tuple[type[Piece], list[tuple[int, int, Color]]]] = [
-            (Rock, [
-                (0, 0, Color.WHITE), 
-                (0, self.width - 1, Color.WHITE),
-                (self.height - 1, 0, Color.BLACK), 
-                (self.height - 1, self.width - 1, Color.BLACK)
-            ]),
-            (Knight, [
-                (0, 1, Color.WHITE), 
-                (0, self.width - 2, Color.WHITE),
-                (self.height - 1, 1, Color.BLACK), 
-                (self.height - 1, self.width - 2, Color.BLACK)
-            ]),
-            (Bishop, [
-                (0, 2, Color.WHITE), 
-                (0, self.width - 3, Color.WHITE),
-                (self.height - 1, 2, Color.BLACK), 
-                (self.height - 1, self.width - 3, Color.BLACK)
-            ]),
-            (Queen, [
-                (0, 3, Color.WHITE),
-                (self.height - 1, 3, Color.BLACK)
-            ]),
-            (King, [
-                (0, 4, Color.WHITE),
-                (self.height - 1, 4, Color.BLACK)
-            ])
+            (Rock, [(0, 0, Color.WHITE), (0, self.width - 1, Color.WHITE),
+                    (self.height - 1, 0, Color.BLACK),
+                    (self.height - 1, self.width - 1, Color.BLACK)]),
+            (Knight, [(0, 1, Color.WHITE), (0, self.width - 2, Color.WHITE),
+                      (self.height - 1, 1, Color.BLACK),
+                      (self.height - 1, self.width - 2, Color.BLACK)]),
+            (Bishop, [(0, 2, Color.WHITE), (0, self.width - 3, Color.WHITE),
+                      (self.height - 1, 2, Color.BLACK),
+                      (self.height - 1, self.width - 3, Color.BLACK)]),
+            (Queen, [(0, 3, Color.WHITE), (self.height - 1, 3, Color.BLACK)]),
+            (King, [(0, 4, Color.WHITE), (self.height - 1, 4, Color.BLACK)])
         ]
         for clss, positions in pieces:
             for x, y, color in positions:
@@ -120,8 +104,7 @@ class Board:
 
                 case.add_piece(piece)
 
-
-    def in_board(self, pos : tuple) -> bool:
+    def in_board(self, pos: tuple) -> bool:
         """
         Checks if a given position is within the board boundaries.
 
@@ -133,8 +116,7 @@ class Board:
         """
         return 0 <= pos[0] < self.height and 0 <= pos[1] < self.width
 
-
-    def case_in_board(self, case : Case) -> bool:
+    def case_in_board(self, case: Case) -> bool:
         """
         Checks if a given board square (Case) is within the board boundaries.
 
@@ -146,7 +128,6 @@ class Board:
         """
         return self.in_board(case.get_pos())
 
-
     def get_cases(self) -> list[list[Case]]:
         """
         Returns the full 2D grid of board squares.
@@ -156,8 +137,7 @@ class Board:
         """
         return self.cases
 
-
-    def get_case(self, pos : tuple) -> Case:
+    def get_case(self, pos: tuple) -> Case:
         """
         Retrieves the Case object at the specified coordinates.
 
@@ -171,16 +151,14 @@ class Board:
             return self.cases[pos[0]][pos[1]]
         return None
 
-
-    def get_white_king(self) -> 'King': 
+    def get_white_king(self) -> 'King':
         """
         Returns the white king piece.
 
         Returns:
             King | None: Reference to the white king on the board.
         """
-        return self.white_king_piece 
-
+        return self.white_king_piece
 
     def get_black_king(self) -> 'King':
         """
@@ -191,7 +169,6 @@ class Board:
         """
         return self.black_king_piece
 
-
     def get_Game(self) -> Game:
         """
         Returns the game instance this board belongs to.
@@ -201,8 +178,7 @@ class Board:
         """
         return self.game
 
-
-    def translate(self, chain : str) -> tuple[int, int]:
+    def translate(self, chain: str) -> tuple[int, int]:
         """
         Converts a board coordinate string (e.g., 'a2') to numeric indices.
 
@@ -218,13 +194,12 @@ class Board:
             letters = 'abcdefghijklmnopqrstuvwxyz'
 
             x = letters.index(x)
-            return y,x
-        
+            return y, x
+
         except:
             return None
 
-
-    def roundtrip(self, pos : tuple) -> str:
+    def roundtrip(self, pos: tuple) -> str:
         """
         Converts numeric board indices back to algebraic notation (e.g., (1,0) -> 'a2').
 
@@ -245,8 +220,7 @@ class Board:
         except:
             print("Wrong coordinates")
 
-
-    def move(self, start : Case, end : Case) -> bool:
+    def move(self, start: Case, end: Case) -> bool:
         """
         Moves a piece from the start Case to the end Case.
 
@@ -270,8 +244,7 @@ class Board:
                     self.black_king_piece = end.get_piece()
         return success
 
-
-    def plateau_terminal(self, piece : Piece = None):
+    def plateau_terminal(self, piece: Piece = None):
         """
         Displays the current board state in the terminal.
 
@@ -306,16 +279,21 @@ class Board:
                     display_piece = PIECE_SYMBOLS.get(key)
 
                 if case.get_pos() in green_cases:
-                    draw.append(BACKGROUND_GREEN + TEXTE_BLACK + " " + display_piece + " " + RESET)
+                    draw.append(BACKGROUND_GREEN + TEXTE_BLACK + " " +
+                                display_piece + " " + RESET)
 
-                elif piece != None and case.get_pos() == piece.get_case().get_pos():
-                    draw.append(BACKGROUND_RED + TEXTE_BLACK + " " + display_piece + " " + RESET)
+                elif piece != None and case.get_pos() == piece.get_case(
+                ).get_pos():
+                    draw.append(BACKGROUND_RED + TEXTE_BLACK + " " +
+                                display_piece + " " + RESET)
 
                 else:
                     if case.get_color().name == "WHITE":
-                        draw.append(BACKGROUND_WHITE + TEXTE_BLACK + " " + display_piece + " " + RESET)
+                        draw.append(BACKGROUND_WHITE + TEXTE_BLACK + " " +
+                                    display_piece + " " + RESET)
                     else:
-                        draw.append(BACKGROUND_BLUE + TEXTE_BLACK + " " + display_piece + " " + RESET)
+                        draw.append(BACKGROUND_BLUE + TEXTE_BLACK + " " +
+                                    display_piece + " " + RESET)
 
             draw.append("\n")
             cpt -= 1

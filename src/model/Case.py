@@ -3,11 +3,11 @@ from __future__ import annotations  # <--- Magic line
 from .Color import Color
 from .Pieces import Piece
 
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .Board import Board
+
 
 class Case:
     """
@@ -20,12 +20,11 @@ class Case:
         board (Board): Reference to the board this square belongs to.
     """
 
-    def __init__(self, pos : tuple, color : Color, board : Board, piece = None):
+    def __init__(self, pos: tuple, color: Color, board: Board, piece=None):
         self.pos = pos
         self.color = color
         self.piece = piece
         self.board = board
-
 
     def get_piece(self) -> Piece:
         """
@@ -35,7 +34,6 @@ class Case:
             Piece | None: The piece on the square, or None if empty.
         """
         return self.piece
-
 
     def set_piece(self, new_piece: Piece) -> Piece:
         """
@@ -49,7 +47,6 @@ class Case:
         """
         self.piece = new_piece
 
-
     def remove_piece(self) -> bool:
         """
         Removes any piece from this square.
@@ -60,8 +57,7 @@ class Case:
         self.piece = None
         return True
 
-
-    def add_piece(self, piece : Piece) -> bool:
+    def add_piece(self, piece: Piece) -> bool:
         """
         Places a piece on this square, replacing any existing piece.
 
@@ -74,7 +70,6 @@ class Case:
         self.piece = piece
         return True
 
-
     def get_pos(self) -> tuple:
         """
         Returns the coordinates of this square on the board.
@@ -83,7 +78,6 @@ class Case:
             tuple[int, int]: The (row, column) position of the square.
         """
         return self.pos
-
 
     def get_board(self) -> Board:
         """
@@ -94,7 +88,6 @@ class Case:
         """
         return self.board
 
-
     def get_color(self) -> Color:
         """
         Returns the color of the square.
@@ -103,7 +96,6 @@ class Case:
             Color: The square's color (black or white).
         """
         return self.color
-
 
     def contains_piece(self) -> bool:
         """

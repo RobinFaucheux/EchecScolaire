@@ -1,9 +1,10 @@
-import socket 
+import socket
 import sys
 from model import *
 import db.init_db as db
 import db.queries as queries
 from colorama import init
+
 init()
 
 
@@ -18,7 +19,6 @@ class serveur:
     def __init__(self):
         self.counter = 0
 
-
     def mainServer(self, port):
         """
         Starts the server and listens for incoming client connections.
@@ -29,7 +29,7 @@ class serveur:
         """
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        
+
         try:
             sock.bind(("0.0.0.0", port))
             sock.listen(1)
@@ -42,10 +42,10 @@ class serveur:
             print("Waiting for player...")
             cli, addr = sock.accept()
             print(f"New connection from {addr}")
-            
+
             sess = Session(self, cli)
             sess.mainSession()
-            
+
             print("Session finished.")
 
         except KeyboardInterrupt:
@@ -72,23 +72,22 @@ class Session:
         game (Game): The chess game being played in this session.
         board (Board): The game board for the current session.
     """
-    
+
     def __init__(self, serveur, sock):
         self.server = serveur
         self.socket = sock
         self.file = sock.makefile(mode="rw", encoding='utf-8')
-        
+
         player1 = Player(1, 'player1', 1200, [])
         player2 = Player(2, 'player2', 1200, [])
-        
+
         try:
             id_game = queries.save_game(connexion)
         except:
-            id_game = 1 
+            id_game = 1
 
         self.game = Game(id_game, player1, player2)
         self.board = self.game.get_board()
-
 
     def format_time(self, seconds: float) -> str:
         """
@@ -103,7 +102,6 @@ class Session:
         seconds = max(0, int(seconds))
         return f"{seconds // 60:02}:{seconds % 60:02}"
 
-
     def send(self, message):
         """
         Sends a message to the client through the socket.
@@ -117,7 +115,6 @@ class Session:
         except Exception:
             pass
 
-
     def ask_input(self, prompt):
         """
         Sends a prompt to the client and reads their input.
@@ -129,16 +126,15 @@ class Session:
             str | None: The client's response, lowercased and stripped, or None if connection is closed.
         """
         try:
-            self.file.write(prompt + "\nEntree : \n") 
+            self.file.write(prompt + "\nEntree : \n")
             self.file.flush()
-            
+
             response = self.file.readline()
             if not response:
                 return None
             return response.strip().lower()
         except Exception:
             return None
-
 
     def mainSession(self):
         """
@@ -150,7 +146,7 @@ class Session:
         - Saves moves and final game results to the database.
         """
         game = self.game
-        
+
         try:
             while not game.get_finish():
                 player_color = game.current_color()
@@ -162,21 +158,28 @@ class Session:
                     break
 
                 self.send(f"\n==========================================")
-                self.send(f"Turn {game.get_turn()} - {player.get_pseudo()} ({player_color})")
+                self.send(
+                    f"Turn {game.get_turn()} - {player.get_pseudo()} ({player_color})"
+                )
                 self.send(f"White time: {self.format_time(game.time_white)}")
                 self.send(f"Black time: {self.format_time(game.time_black)}")
-                self.send(self.board.plateau_terminal()) 
-                
+                self.send(self.board.plateau_terminal())
+
                 piece_to_be_moved = ""
                 start_case_piece = None
-                
-                while True:
-                    piece_to_be_moved = self.ask_input("Enter the starting square (example: a2)")
-                    
-                    if piece_to_be_moved is None: return 
-                    if piece_to_be_moved == "quit": return
 
-                    if len(piece_to_be_moved) < 2 or not (piece_to_be_moved[0].isalpha() and piece_to_be_moved[1:].isdigit()):
+                while True:
+                    piece_to_be_moved = self.ask_input(
+                        "Enter the starting square (example: a2)")
+
+                    if piece_to_be_moved is None:
+                        return
+                    if piece_to_be_moved == "quit":
+                        return
+
+                    if len(piece_to_be_moved) < 2 or not (
+                            piece_to_be_moved[0].isalpha() and
+                            piece_to_be_moved[1:].isdigit()):
                         self.send("Invalid input! Format: a2")
                         continue
 
@@ -189,24 +192,29 @@ class Session:
                     if start_case_piece.get_piece() is None:
                         self.send("No piece here!")
                         continue
-                    
-                    if start_case_piece.get_piece().get_color().name != player_color:
+
+                    if start_case_piece.get_piece().get_color(
+                    ).name != player_color:
                         self.send("Not your piece!")
                         continue
-                    
+
                     if not start_case_piece.get_piece().accessible_spots():
                         self.send("Piece cannot move!")
                         continue
 
-                    break 
+                    break
 
                 self.send(game.allowed_moves_graphic(piece_to_be_moved))
 
                 while True:
-                    location_input = self.ask_input(f"Enter destination for {piece_to_be_moved} (example: a4)")
-                    
-                    if location_input is None: return
-                    if location_input == "quit": return
+                    location_input = self.ask_input(
+                        f"Enter destination for {piece_to_be_moved} (example: a4)"
+                    )
+
+                    if location_input is None:
+                        return
+                    if location_input == "quit":
+                        return
 
                     if len(location_input) < 2:
                         self.send("Invalid input!")
@@ -218,39 +226,46 @@ class Session:
                         continue
 
                     end_case_piece = self.board.get_case(end_piece_tuple)
-                    
+
                     save_start_case_piece = start_case_piece.get_piece()
-                    final_start = self.board.roundtrip(start_case_piece.get_pos())
+                    final_start = self.board.roundtrip(
+                        start_case_piece.get_pos())
                     final_end = self.board.roundtrip(end_case_piece.get_pos())
 
                     reussi = game.move(piece_to_be_moved, location_input)
-                    
+
                     if not reussi:
                         self.send("Illegal move! Choose a green box.")
                         continue
-                    
+
                     game.update_clock()
-                    self.send(f"> {player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}")
-                    
+                    self.send(
+                        f"> {player.get_pseudo()} moved {save_start_case_piece.get_name()} from {final_start} to {final_end}"
+                    )
+
                     try:
-                        queries.save_coup(connexion, game.get_idG(), game.get_turn(), final_start, final_end)
+                        queries.save_coup(connexion, game.get_idG(),
+                                          game.get_turn(), final_start,
+                                          final_end)
                     except:
-                        pass 
+                        pass
 
                     game.set_turn(game.get_turn() + 1)
-                    break 
+                    break
 
             self.send("Game Over!")
-            
+
             try:
                 old_elo_player1 = game.get_joueur(0).get_elo()
                 old_elo_player2 = game.get_joueur(1).get_elo()
-                
+
                 game.get_joueur(0).calculate_elo(old_elo_player2, 'won')
                 game.get_joueur(1).calculate_elo(old_elo_player1, 'loose')
-                
-                queries.save_final_game(connexion, game, game.get_idG(), game.get_joueur(0), 'won')
-                queries.save_final_game(connexion, game, game.get_idG(), game.get_joueur(1), 'loose')
+
+                queries.save_final_game(connexion, game, game.get_idG(),
+                                        game.get_joueur(0), 'won')
+                queries.save_final_game(connexion, game, game.get_idG(),
+                                        game.get_joueur(1), 'loose')
             except Exception as e:
                 print(f"Error saving game results: {e}")
 
@@ -271,5 +286,5 @@ if __name__ == "__main__":
         db.create_database(connexion)
     else:
         print("Database ready.")
-    
+
     serveur().mainServer(5555)

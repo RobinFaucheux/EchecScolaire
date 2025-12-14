@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..Case import Case
 
+
 class Pawn(Piece):
     """
     Represents a pawn chess piece.
@@ -17,14 +18,13 @@ class Pawn(Piece):
         _vectors (list[tuple[int, int]]): Possible movement vectors including standard moves, captures, and double advance on first move.
     """
 
-    def __init__(self, color : Color, case : Case):
+    def __init__(self, color: Color, case: Case):
         name = "pawn"
         if color == Color.BLACK:
             self._vectors = [(-1, -1), (-1, 0), (-1, 1), (-2, 0)]
         else:
             self._vectors = [(1, -1), (1, 0), (1, 1), (2, 0)]
         super().__init__(color, case, name, self._vectors)
-    
 
     def process_vectors(self) -> list[tuple[int, int]]:
         """
@@ -36,13 +36,14 @@ class Pawn(Piece):
         Returns:
             list[tuple[int, int]]: The list of adjusted movement vectors.
         """
-        if self.color == Color.BLACK and self.case.get_pos()[0] != 6 and (-2, 0) in self._vectors:
+        if self.color == Color.BLACK and self.case.get_pos()[0] != 6 and (
+                -2, 0) in self._vectors:
             self._vectors.remove((-2, 0))
-            
-        if self.color == Color.WHITE and self.case.get_pos()[0] != 1 and (2, 0) in self._vectors:
+
+        if self.color == Color.WHITE and self.case.get_pos()[0] != 1 and (
+                2, 0) in self._vectors:
             self._vectors.remove((2, 0))
         return super().process_vectors()
-    
 
     def remove_lines_after_piece(self) -> list:
         """
@@ -61,7 +62,7 @@ class Pawn(Piece):
         for co in l:
             vector = (co[0] - pos[0], co[1] - pos[1])
             d_vectors[vector] = co
-        
+
         if self.color == Color.BLACK:
             for vector, co in d_vectors.items():
                 piece = self.case.get_board().get_case(co).get_piece()
@@ -103,9 +104,8 @@ class Pawn(Piece):
                             res.append(co)
                         continue
         return res
-    
 
-    def move(self, case : Case) -> bool:
+    def move(self, case: Case) -> bool:
         """
         Attempts to move the pawn to a given square.
         
@@ -132,8 +132,9 @@ class Pawn(Piece):
                 self.remove()
                 case.add_piece(Queen(Color.BLACK, case))
                 return True
-            
-            if self.color == Color.WHITE and case.get_pos()[0] == self.case.get_board().height-1:
+
+            if self.color == Color.WHITE and case.get_pos(
+            )[0] == self.case.get_board().height - 1:
                 if case.get_piece() != None:
                     if case.get_piece().get_name() == "king":
                         case.get_board().get_Game().win()

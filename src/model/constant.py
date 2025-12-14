@@ -35,7 +35,7 @@ PIECE_SYMBOLS = {
     ("king", "BLACK"): BLACK_KING
 }
 
-TIMER = 0.5 # in minutes
+TIMER = 0.5  # in minutes
 ONE_MINUTE_IN_SECONDS = 60
 COEFF_SENSIBILITE_ELO = 20
 

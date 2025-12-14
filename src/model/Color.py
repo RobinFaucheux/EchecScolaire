@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Color(Enum):
     """
     Represents the color of a chess piece or square.
