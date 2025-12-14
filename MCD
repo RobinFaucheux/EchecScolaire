@@ -1,0 +1,5 @@
+PLAYER: id, pseudo, passwd, elo
+PLAY, 0N PLAYER, 22 GAME: won, color
+GAME: idG, dateG, duration, stateG
+INCLUDES, 1N GAME, _11 COUP
+COUP: turn, coup
