@@ -100,7 +100,7 @@ def main_menu(connexion: sqlalchemy.Connection) -> list[Player]:
     """
     players = []
     print("======================================")
-    print("       Welcome to ChessSchool")
+    print("       Welcome to EchecScolaire")
     print("======================================\n")
     for i in range(1, 3):
         print(f"\n--- Player {i} ---")
