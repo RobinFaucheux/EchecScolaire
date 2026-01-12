@@ -43,12 +43,18 @@ class Serveur:
             return
 
         try:
-            print("Waiting for player...")
-            cli, addr = sock.accept()
-            print(f"New connection from {addr}")
+            print("Waiting for player1...")
+            cli1, addr1 = sock.accept()
 
-            sess = Session(self, cli, self.connection)
-            sess.main_session()
+            print(f"New connection from {addr1}")
+
+            print("Waiting for player2...")
+            cli2, addr2 = sock.accept()
+            
+            print(f"New connection from {addr2}")
+            
+            servGame = ServerGame(self, cli1, cli2, self.connection)
+            servGame.mainGameServer()
 
             print("Session finished.")
 
