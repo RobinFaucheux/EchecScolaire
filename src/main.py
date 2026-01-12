@@ -25,6 +25,13 @@ def main(connexion):
 
     board = g.get_board()
 
+    g.move(("g1"), ("h3"))
+    g.move(("e2"), ("e4"))
+    g.move(("f2"), ("f4"))
+    g.move(("f1"), ("c4"))
+    g.move(("d2"), ("d4"))
+    board.plateau_terminal()
+    
     while not g.get_finish():
         dico = game.play_turn(connexion, board)
 

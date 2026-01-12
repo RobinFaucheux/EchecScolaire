@@ -20,6 +20,7 @@ class Rock(Piece):
     def __init__(self, color: Color, case: Case):
         name = "rock"
         self._vectors = []
+        self.already_moved = False
         self.init_vectors()
         super().__init__(color, case, name, self._vectors)
 
@@ -34,3 +35,9 @@ class Rock(Piece):
             if i != 0:
                 self._vectors.append((0, i))
                 self._vectors.append((i, 0))
+    
+    def rock_moved(self):
+        self.already_moved = True
+        
+    def get_already_moved(self):
+        return self.already_moved

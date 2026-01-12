@@ -236,8 +236,16 @@ class Board:
         success = start.get_piece().move(end)
 
         if success:
-            if end.get_piece().get_name() == "King":
 
+            if end.get_piece().get_name() == "rock":
+
+                end.get_piece().rock_moved()
+                
+            if end.get_piece().get_name() == "king":
+
+                if not end.get_piece().get_already_moved():
+                    end.get_piece().king_moved()
+                    
                 if end.get_piece().get_color().name == "WHITE":
                     self.white_king_piece = end.get_piece()
                 else:
