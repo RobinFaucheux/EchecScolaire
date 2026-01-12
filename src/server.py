@@ -1,6 +1,7 @@
 import socket
 import sys
 from model.game import Game
+from model.color import Color
 from model.player import Player
 from model.constant import TEXTE_RED, RESET
 import db.init_db as db
@@ -63,6 +64,68 @@ class Serveur:
                 pass
             sys.exit()
 
+class ServerGame:
+    def __init__(self, serveur, sock1, sock2, connection):
+        self.serveur = serveur
+        self.socket1 = sock1
+        self.socket2 = sock2
+        self.connexion = connection
+
+        self.replay_count = []
+
+        player1 = Player(1, "player1", 1200, [])
+        player2 = Player(2, "player2", 1200, [])
+        
+        try:
+            id_game = queries.save_game(self.connexion)
+        except Exception:
+            id_game = 1
+
+        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE)
+        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK) # Session2.wav go stream
+
+        self.current_player = self.sess1
+        self.current_color = Color.WHITE
+
+        self.game = Game(id_game, player1, player2)
+    
+    def movePiece(self, start, end, color):
+        if self.game.current_color() == color:
+            self.game.move(start, end)
+            if color == Color.WHITE:
+                self.sess2.send_adversary_move(start, end)
+            else:
+                self.sess1.send_adversary_move(start, end)
+
+    def abandon(self, color):
+        if color == Color.WHITE:
+            self.sess2.win()
+            self.sess1.loose()
+        else:
+            self.sess1.win()
+            self.sess2.loose()
+
+    def replay(self, color):
+        if color not in self.replay_count:
+            self.replay_count.append(self.color)
+        
+        if len(self.replay_count == 2):
+            self = ServerGame(self.serveur, self.socket1, self.socket2, self.connexion)
+
+    def next(self):
+        if self.current_color == Color.WHITE:
+            self.current_player = self.sess2
+            self.current_color = Color.BLACK
+        else:
+            self.current_player = self.sess1
+            self.current_color = Color.WHITE 
+
+    def mainGameServer(self):
+        while self.sess1.opened and self.sess2.opened:
+            self.current_player.receive()
+            self.next()
+        
+        
 
 class Session:
     """
@@ -76,14 +139,16 @@ class Session:
         board (Board): The game board for the current session.
     """
 
-    def __init__(self, serveur, sock, connection):
+    def __init__(self, serveur, sock, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame):
         self.connection = connection
         self.server = serveur
         self.socket = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
 
-        player1 = Player(1, "player1", 1200, [])
-        player2 = Player(2, "player2", 1200, [])
+        player1 = player
+        player2 = adversary
+
+        self.serverGame = serverGame
 
         try:
             id_game = queries.save_game(self.connexion)
@@ -92,6 +157,15 @@ class Session:
 
         self.game = Game(id_game, player1, player2)
         self.board = self.game.get_board()
+
+        self.opened = True
+
+        self.color = color
+
+        if color == Color.WHITE:
+            self.send("start w")
+        else:
+            self.send("start b")
 
     def format_time(self, seconds: float) -> str:
         """
@@ -118,6 +192,85 @@ class Session:
             self.file.flush()
         except Exception:
             pass
+    
+    def send_adversary_move(self, start, end):
+        self.send("play_ad "+start+" "+end)
+
+    def win(self):
+        self.send("win")
+    
+    def loose(self):
+        self.send("loose")
+    
+    def draw(self):
+        self.send("draw")
+    
+    def exit(self):
+        self.send("exit")
+
+    def receive(self, message):
+        rep = self.file.readline().split(' ')
+        response = rep[0]
+        args = rep[0:]
+
+        match response:
+            case "register":
+                try:
+                    nomJ = args[0]
+                    mdpJ = args[1]
+                    player = Player() #TODO
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            case "connect":
+                try:
+                    nomJ = args[0]
+                    mdpJ = args[1]
+                    player = Player() #TODO
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            case "play":
+                try:
+                    dep = args[0]
+                    arr = args[1]
+                    self.serverGame.movePiece(dep, arr, self.color)
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            case "leave":
+                try :
+                    self.serverGame.abandon(self.color)
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            case "quit":
+                try :
+                    self.serverGame.abandon(self.color)
+                    self.send('OK')
+                    self.disconnect()
+                except:
+                    self.send('ERR')
+            case "replay":
+                try:
+                    self.serverGame.replay(self.color)
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            case "new":
+                try:
+                    pass
+                except:
+                    pass
+            case _:
+                self.send('ERR')
+
+
+
+    def disconnect(self):
+        self.file.close()
+        self.socket.close()
+        self.opened = False
 
     def ask_input(self, prompt):
         """
@@ -141,7 +294,9 @@ class Session:
         except Exception:
             return None
 
-    def main_session(self):
+
+
+    # def main_session(self):
         """
         Main loop for a single game session with a client.
 
