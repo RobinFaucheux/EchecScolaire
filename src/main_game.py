@@ -154,12 +154,10 @@ def play_turn(connexion: sqlalchemy.Connection,
                 ligne, col = start_case_piece.get_pos()
 
                 if (ligne, col + 2) == end_case_piece.get_pos():
-                    reussi = game.can_castle(start_case_piece.get_piece(), "left")
-                    print("gdf", reussi)
+                    reussi = game.can_castle(start_case_piece.get_piece(), "right")
 
                 elif (ligne, col - 2) == end_case_piece.get_pos():
-                    reussi = game.can_castle(start_case_piece.get_piece(), "right")
-                    print("frgdg", reussi)
+                    reussi = game.can_castle(start_case_piece.get_piece(), "left")
                 
                 else:
                     reussi = game.move(piece_to_be_moved, location_piece_to_be_moved)

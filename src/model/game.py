@@ -275,13 +275,12 @@ class Game:
             reussi = None
 
             if (ligne, col + 2) == end_case.get_pos():
-                reussi = self.can_castle(start_case.get_piece(), "left")
+                reussi = board_copy.get_game().can_castle(start_case.get_piece(), "left")
 
             elif (ligne, col - 2) == end_case.get_pos():
-                reussi = self.can_castle(start_case.get_piece(), "right")
+                reussi = board_copy.get_game().can_castle(start_case.get_piece(), "right")
 
             if reussi != None:
-                print("rock ", reussi)
                 return not reussi
                 
 
@@ -352,23 +351,36 @@ class Game:
             return True
         return False
 
-    def can_castle(self, king_piece: Piece, direction) -> bool:
+    def can_castle(self, king_piece: Piece, direction: str) -> bool:
         color = king_piece.get_color()
         rock_case = None
         king_pos = king_piece.get_case().get_pos()
 
         if direction == "left":
-            rock_case = self.board.get_case((king_pos[0], 7))
-        else:
             rock_case = self.board.get_case((king_pos[0], 0))
+        else:
+            rock_case = self.board.get_case((king_pos[0], 7))
 
         if rock_case.contains_piece():
             if not rock_case.get_piece().get_already_moved():
                 if not king_piece.get_already_moved():
-                    self.to_castle(king_piece, king_pos, rock_case)
-                    return True
+                    reussi = self.to_castle(king_piece, king_pos, rock_case, direction)
+                    print("can", reussi)
+                    return reussi
         return False
                             
-    def to_castle(self, king_piece: Piece, king_pos: tuple[int, int], rock_case: Case):
-        self.board.move(king_piece.get_case(), self.board.get_case((king_pos[0], 6)))
-        self.board.move(rock_case, self.board.get_case((king_pos[0], 5)))
+    def to_castle(self, king_piece: Piece, king_pos: tuple[int, int], rock_case: Case, direction: str) -> bool:
+        if direction == "right":
+            rook_col, king_col = 5, 6
+        else:
+            rook_col, king_col = 3, 2
+
+        reussi = self.board.move(rock_case, self.board.get_case((king_pos[0], rook_col)))
+
+        if reussi:  
+            moving_piece = king_piece.get_case().get_piece()
+            king_piece.get_case().set_piece(None)
+            self.board.get_case((king_pos[0], king_col)).set_piece(moving_piece)
+            moving_piece.set_case(self.board.get_case((king_pos[0], king_col)))
+            return True
+        return False
