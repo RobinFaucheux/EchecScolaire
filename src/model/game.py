@@ -1,5 +1,7 @@
 from .player import Player
 from .board import Board
+from .case import Case
+from .pieces.piece import Piece
 import time
 from .constant import TIMER, ONE_MINUTE_IN_SECONDS
 from copy import deepcopy
@@ -267,6 +269,22 @@ class Game:
 
         start_case = board_copy.get_case(start_pos)
         end_case = board_copy.get_case(end_pos)
+
+        if start_case.get_piece().get_name() == "king":
+            ligne, col = start_case.get_pos()
+            reussi = None
+
+            if (ligne, col + 2) == end_case.get_pos():
+                reussi = self.can_castle(start_case.get_piece(), "left")
+
+            elif (ligne, col - 2) == end_case.get_pos():
+                reussi = self.can_castle(start_case.get_piece(), "right")
+
+            if reussi != None:
+                print("rock ", reussi)
+                return not reussi
+                
+
         moving_piece = start_case.get_piece()
 
         start_case.set_piece(None)
@@ -333,3 +351,24 @@ class Game:
                 player_color):
             return True
         return False
+
+    def can_castle(self, king_piece: Piece, direction) -> bool:
+        color = king_piece.get_color()
+        rock_case = None
+        king_pos = king_piece.get_case().get_pos()
+
+        if direction == "left":
+            rock_case = self.board.get_case((king_pos[0], 7))
+        else:
+            rock_case = self.board.get_case((king_pos[0], 0))
+
+        if rock_case.contains_piece():
+            if not rock_case.get_piece().get_already_moved():
+                if not king_piece.get_already_moved():
+                    self.to_castle(king_piece, king_pos, rock_case)
+                    return True
+        return False
+                            
+    def to_castle(self, king_piece: Piece, king_pos: tuple[int, int], rock_case: Case):
+        self.board.move(king_piece.get_case(), self.board.get_case((king_pos[0], 6)))
+        self.board.move(rock_case, self.board.get_case((king_pos[0], 5)))

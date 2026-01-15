@@ -148,8 +148,25 @@ def play_turn(connexion: sqlalchemy.Connection,
                     "Move would put your king in danger! Choose another piece.")
                 board.plateau_terminal()
                 break
+            
+            reussi = False
+            if start_case_piece.get_piece().get_name() == "king":
+                ligne, col = start_case_piece.get_pos()
 
-            reussi = game.move(piece_to_be_moved, location_piece_to_be_moved)
+                if (ligne, col + 2) == end_case_piece.get_pos():
+                    reussi = game.can_castle(start_case_piece.get_piece(), "left")
+                    print("gdf", reussi)
+
+                elif (ligne, col - 2) == end_case_piece.get_pos():
+                    reussi = game.can_castle(start_case_piece.get_piece(), "right")
+                    print("frgdg", reussi)
+                
+                else:
+                    reussi = game.move(piece_to_be_moved, location_piece_to_be_moved)
+            
+            else:
+                if not reussi:
+                    reussi = game.move(piece_to_be_moved, location_piece_to_be_moved)
 
             if not reussi:
                 print("Movement not possible, please choose a green box.")
