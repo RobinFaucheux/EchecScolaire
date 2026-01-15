@@ -102,6 +102,12 @@ class ServerGame:
                 self.sess2.send_adversary_move(start, end)
             else:
                 self.sess1.send_adversary_move(start, end)
+        try:
+            queries.save_coup(self.connection, self.game.get_idG(),
+                                self.game.get_turn(), start,
+                                end)
+        except Exception:
+            pass
 
     def abandon(self, color):
         if color == Color.WHITE:
@@ -124,12 +130,60 @@ class ServerGame:
             self.current_color = Color.BLACK
         else:
             self.current_player = self.sess1
-            self.current_color = Color.WHITE 
+            self.current_color = Color.WHITE
+
+    def end_game(self, status_player_1 : str, status_player_2 : str):
+        try:
+            old_elo_player1 = self.game.get_joueur(0).get_elo()
+            old_elo_player2 = self.game.get_joueur(1).get_elo()
+
+            self.game.get_joueur(0).calculate_elo(old_elo_player2, status_player_1)
+            self.game.get_joueur(1).calculate_elo(old_elo_player1, status_player_2)
+
+            queries.save_final_game(self.connexion, self.game, self.game.get_idG(),
+                                    self.game.get_joueur(0), status_player_1)
+            queries.save_final_game(self.connexion, self.game, self.game.get_idG(),
+                                    self.game.get_joueur(1), status_player_2)
+        except Exception as e:
+            print(f"Error saving game results: {e}")
+
+
+    def next_turn(self):
+        self.next()
+        if self.game.time_white <= 0 or self.game.time_black <= 0:
+            self.game.set_finish()
+
+        if self.game.is_checkmate(self.current_color):
+            self.game.set_finish()
+            if self.current_color == Color.BLACK:
+                self.sess2.loose()
+                self.sess1.win()
+                self.end_game("win", "loose")
+            else:
+                self.sess2.win()
+                self.sess1.loose()
+                self.end_game("loose", "win")
+                
+
+        if self.game.is_stalemate(self.current_color):
+            self.game.set_finish()
+            self.sess1.draw()
+            self.sess2.draw()
+            self.end_game("draw", "draw")
+        
+        self.game.update_clock()
+        
+        
+
+        self.game.set_turn(self.game.get_turn() + 1)
+
+
+        
 
     def mainGameServer(self):
         while self.sess1.opened and self.sess2.opened:
             self.current_player.receive()
-            self.next()
+            self.next_turn()
         
         
 
@@ -265,6 +319,7 @@ class Session:
                     self.send('ERR')
             case "new":
                 try:
+                    #TODO
                     pass
                 except:
                     pass
@@ -349,6 +404,12 @@ class Session:
                         "white": game.get_joueur(0),
                         "black": game.get_joueur(1)
                     }
+                   
+
+
+
+
+
 
                 self.send("\n==========================================")
                 self.send(

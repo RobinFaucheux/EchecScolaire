@@ -155,7 +155,7 @@ def play_turn(connexion: sqlalchemy.Connection,
                 print("Movement not possible, please choose a green box.")
                 continue
 
-            game.update_clock()
+            game.update_clock() 
             if game.get_time_black() == 0 or game.get_time_white() == 0:
                 if game.get_time_black() == 0:
                     print("\n" + TEXTE_RED + "player",
