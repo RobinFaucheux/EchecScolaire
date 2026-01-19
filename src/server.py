@@ -17,7 +17,7 @@ class Serveur:
 
     Attributes:
         counter (int): A counter for tracking connections or sessions (currently unused).
-    """
+    """ 
 
     def __init__(self, connection):
         self.counter = 0
@@ -87,8 +87,8 @@ class ServerGame:
         except Exception:
             id_game = 1
 
-        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE)
-        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK) # Session2.wav go stream
+        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE, self)
+        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
 
         self.current_player = self.sess1
         self.current_color = Color.WHITE
@@ -103,7 +103,7 @@ class ServerGame:
             else:
                 self.sess1.send_adversary_move(start, end)
         try:
-            queries.save_coup(self.connection, self.game.get_idG(),
+            queries.save_coup(self.connection, self.game.get_id_g(),
                                 self.game.get_turn(), start,
                                 end)
         except Exception:
@@ -140,9 +140,9 @@ class ServerGame:
             self.game.get_joueur(0).calculate_elo(old_elo_player2, status_player_1)
             self.game.get_joueur(1).calculate_elo(old_elo_player1, status_player_2)
 
-            queries.save_final_game(self.connexion, self.game, self.game.get_idG(),
+            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(0), status_player_1)
-            queries.save_final_game(self.connexion, self.game, self.game.get_idG(),
+            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(1), status_player_2)
         except Exception as e:
             print(f"Error saving game results: {e}")
@@ -166,10 +166,11 @@ class ServerGame:
                 
 
         if self.game.is_stalemate(self.current_color):
+            print("test")
             self.game.set_finish()
             self.sess1.draw()
             self.sess2.draw()
-            self.end_game("draw", "draw")
+            self.end_game("equality", "equality")
         
         self.game.update_clock()
         
@@ -182,6 +183,7 @@ class ServerGame:
 
     def mainGameServer(self):
         while self.sess1.opened and self.sess2.opened:
+            self.game.get_board().plateau_terminal()
             self.current_player.receive()
             self.next_turn()
         
@@ -268,10 +270,11 @@ class Session:
     def exit(self):
         self.send("exit")
 
-    def receive(self, message):
-        rep = self.file.readline().split(' ')
+    def receive(self):
+        rep = self.file.readline().strip().split(' ')
         response = rep[0]
         args = rep[0:]
+        print(rep)
 
         match response:
             case "register":
@@ -535,7 +538,7 @@ class Session:
                     )
 
                     try:
-                        queries.save_coup(self.connection, game.get_idG(),
+                        queries.save_coup(self.connection, game.get_id_g(),
                                           game.get_turn(), final_start,
                                           final_end)
                     except Exception:
@@ -553,9 +556,9 @@ class Session:
                 game.get_joueur(0).calculate_elo(old_elo_player2, "won")
                 game.get_joueur(1).calculate_elo(old_elo_player1, "loose")
 
-                queries.save_final_game(self.connexion, game, game.get_idG(),
+                queries.save_final_game(self.connexion, game, game.get_id_g(),
                                         game.get_joueur(0), "won")
-                queries.save_final_game(self.connexion, game, game.get_idG(),
+                queries.save_final_game(self.connexion, game, game.get_id_g(),
                                         game.get_joueur(1), "loose")
             except Exception as e:
                 print(f"Error saving game results: {e}")
