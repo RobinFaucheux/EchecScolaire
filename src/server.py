@@ -47,13 +47,21 @@ class Serveur:
             cli1, addr1 = sock.accept()
 
             print(f"New connection from {addr1}")
+            print(f"Waiting for player log in")
+            pc1 = PlayerConnexion(cli1, self.connection)
+            while pc1.player is None:
+                pc1.receive()
 
             print("Waiting for player2...")
             cli2, addr2 = sock.accept()
-            
+            print(f"Waiting for player log in")
+            pc2 = PlayerConnexion(cli2, self.connection)
+            while pc2.player is None:
+                pc2.receive()
+
             print(f"New connection from {addr2}")
             
-            servGame = ServerGame(self, cli1, cli2, self.connection)
+            servGame = ServerGame(self, cli1, cli2, self.connection, pc1.player, pc2.player)
             servGame.mainGameServer()
 
             print("Session finished.")
@@ -70,8 +78,70 @@ class Serveur:
                 pass
             sys.exit()
 
+class PlayerConnexion:
+    def __init__(self, sock, connexion):
+        self.sock = sock
+        self.file = sock.makefile(mode="rw", encoding="utf-8")
+        self.player = None
+        self.connexion = connexion
+
+    def connect(self, name, passwd):
+        row = queries.connect_player(self.connexion, name)
+        if row is not None:
+            password = row[2]
+            if password == passwd:
+                self.player = Player(row[0], row[1], row[3], [])
+                self.send('OK')
+            else:
+                self.send("ERR")
+        else:
+            self.send("ERR")
+
+    def register(self, name, passwd):
+        id = queries.register_player(self.connexion, name, passwd)
+        if id is not None:
+            row = queries.collect_player(self.connexion, id)
+            self.player = Player(row[0], row[1], row[3], [])
+            self.send('OK')
+        else:
+            self.send("ERR")
+    
+
+
+    def receive(self):
+        rep = self.file.readline().strip().split(' ')
+        response = rep[0]
+        args = rep[1:]
+
+        match response:
+            case "register":
+                nomJ = args[0]
+                mdpJ = args[1]
+                self.register(nomJ, mdpJ)
+
+            case "connect":
+                nomJ = args[0]
+                mdpJ = args[1]
+                self.connect(nomJ, mdpJ)
+         
+    def send(self, message):
+        """
+        Sends a message to the client through the socket.
+
+        Args:
+            message (str): The message to send.
+        """
+        try:
+            self.file.write(message + "\n")
+            self.file.flush()
+        except Exception:
+            pass
+    
+    
+        
+
 class ServerGame:
-    def __init__(self, serveur, sock1, sock2, connection):
+    def __init__(self, serveur, sock1, sock2, connection, player1, player2 ):
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2
@@ -79,8 +149,6 @@ class ServerGame:
 
         self.replay_count = []
 
-        player1 = Player(1, "player1", 1200, [])
-        player2 = Player(2, "player2", 1200, [])
         
         try:
             id_game = queries.save_game(self.connexion)
@@ -90,11 +158,14 @@ class ServerGame:
         self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE, self)
         self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
 
+
+
         self.current_player = self.sess1
         self.current_color = Color.WHITE
 
         self.game = Game(id_game, player1, player2)
-    
+
+
     def movePiece(self, start, end, color):
         if self.game.current_color() == color.name:
             self.game.move(start, end)
@@ -109,13 +180,20 @@ class ServerGame:
         except Exception:
             pass
 
+    
+
     def abandon(self, color):
         if color == Color.WHITE:
             self.sess2.win()
             self.sess1.loose()
+            self.end_game('loose', 'win')
+
         else:
             self.sess1.win()
             self.sess2.loose()
+            self.end_game('win', 'loose')
+
+
 
     def replay(self, color):
         if color not in self.replay_count:
@@ -131,6 +209,8 @@ class ServerGame:
         else:
             self.current_player = self.sess1
             self.current_color = Color.WHITE
+
+
 
     def end_game(self, status_player_1 : str, status_player_2 : str):
         try:
@@ -177,10 +257,16 @@ class ServerGame:
 
         self.game.set_turn(self.game.get_turn() + 1)
 
-
+    def set_player(self, color : Color, player : Player):
+        if color == Color.BLACK:
+            self.game.set_joueur(player, 1)
+        else:
+            self.game.set_joueur(player, 2)
         
 
     def mainGameServer(self):
+        self.sess1.start('w')
+        self.sess2.start('b')
         while self.sess1.opened and self.sess2.opened:
             self.current_player.receive()
             self.next_turn()
@@ -223,10 +309,6 @@ class Session:
 
         self.color = color
 
-        if color == Color.WHITE:
-            self.send("start w")
-        else:
-            self.send("start b")
 
     def format_time(self, seconds: float) -> str:
         """
@@ -254,6 +336,29 @@ class Session:
         except Exception:
             pass
     
+    def connect(self, name, passwd):
+        row = queries.connect_player(self.connection, name)
+        password = row[2]
+        if password == passwd:
+            p = Player(row[0], row.pseudo[1], row.elo[3], [])
+            self.send('OK')
+            self.serverGame.set_player(self.color, p) 
+        else:
+            self.send("ERR")
+    
+    def register(self, name, passwd):
+        id = queries.register_player(self.connection, name, passwd)
+        if id is not None:
+            self.send('OK')
+            row = queries.connect_player(self.connection, name)
+            p = Player(row[0], row.pseudo[1], row.elo[3], [])
+            self.serverGame.set_player(self.color, p) 
+        else:
+            self.send("ERR")
+
+    def start(self, color):
+        self.send(f'start {color}')
+
     def send_adversary_move(self, start, end):
         self.send("play_ad "+start+" "+end)
 
@@ -280,16 +385,14 @@ class Session:
                 try:
                     nomJ = args[0]
                     mdpJ = args[1]
-                    player = Player() #TODO
-                    self.send('OK')
+                    self.register(nomJ, mdpJ)
                 except:
                     self.send('ERR')
             case "connect":
                 try:
                     nomJ = args[0]
                     mdpJ = args[1]
-                    player = Player() #TODO
-                    self.send('OK')
+                    self.connect(nomJ, mdpJ)
                 except:
                     self.send('ERR')
             case "play":

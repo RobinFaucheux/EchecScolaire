@@ -29,6 +29,24 @@ def register_player(connexion: sqlalchemy.Connection, username: str,
     return row[0] if row else None
 
 
+def connect_player(connexion: sqlalchemy.Connection, nom: str) -> Row:
+    """
+    Retrieves a player's data from the database by ID.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        id (int): The ID of the player to retrieve.
+
+    Returns:
+        Row: The database row containing player data, or None if not found.
+    """
+    stmt = sqlalchemy.text(
+        "select idP, pseudo, passwd, elo from PLAYER where pseudo = :nom")
+    res = connexion.execute(stmt, {"nom": nom})
+    row = res.fetchone()
+    return row if row else None
+
+
 def collect_player(connexion: sqlalchemy.Connection, id: int) -> Row:
     """
     Retrieves a player's data from the database by ID.

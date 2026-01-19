@@ -40,6 +40,17 @@ class Game:
         """
         return self.joueurs[pos]
 
+    def set_joueur(self, p : Player, nb : int):
+        """sets the player
+
+        Args:
+            p (Player): player
+        """
+        if nb == 1:
+            self.joueurs = [p, self.joueurs[1]]
+        else:
+            self.joueurs = [self.joueurs[0], p]
+
     def get_id_g(self) -> int:
         """
         Returns the game ID.

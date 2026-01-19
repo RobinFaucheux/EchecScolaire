@@ -21,6 +21,11 @@ class Client:
         "======================\n"
         "     EchecScolaire    \n"
         "======================")
+    
+    def connexion_menu(self):
+        print("" \
+        "1. Se connecter \n"
+        "2. S'enregistrer")
 
     def player_connexion(self):
         print()
@@ -48,7 +53,31 @@ class Client:
                 self.file = self.sock.makefile(mode="rw")
                 print("Connection effectuee avec succes")
                 co_ok = True
-                #TODO register, connexion
+                player_co = False
+                while not player_co:
+                    self.connexion_menu()
+                    commande = input().strip()
+                    match commande:
+                        case "1":
+                            name  = input ("nom :")
+                            mdp = input("mot de passe : ")
+                            self.send(f'connect {name} {mdp}')
+                            rep = self.file.readline().strip()
+                            print(rep)
+                            if rep == "OK":
+                                player_co = True
+                        case "2":
+                            name  = input ("nom :")
+                            mdp = input("mot de passe : ")
+                            self.send(f'register {name} {mdp}')
+                            rep = self.file.readline().strip()
+                            print(rep)
+                            if rep == "OK":
+                                player_co = True
+                        case _:
+                            print("Veuillez entrer un nom/mdp correct")
+                print("Connexion effectuee avec succes")
+                
             except:
                 print("Veuillez entrer des valeurs correctes")
 
