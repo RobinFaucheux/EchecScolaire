@@ -87,8 +87,8 @@ class ServerGame:
         except Exception:
             id_game = 1
 
-        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE)
-        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK) # Session2.wav go stream
+        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE, self)
+        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
 
         self.current_player = self.sess1
         self.current_color = Color.WHITE
@@ -169,7 +169,7 @@ class ServerGame:
             self.game.set_finish()
             self.sess1.draw()
             self.sess2.draw()
-            self.end_game("draw", "draw")
+            self.end_game("equality", "equality")
         
         self.game.update_clock()
         
@@ -182,8 +182,10 @@ class ServerGame:
 
     def mainGameServer(self):
         while self.sess1.opened and self.sess2.opened:
+            self.game.get_board().plateau_terminal()
             self.current_player.receive()
             self.next_turn()
+            
         
         
 
@@ -268,8 +270,8 @@ class Session:
     def exit(self):
         self.send("exit")
 
-    def receive(self, message):
-        rep = self.file.readline().split(' ')
+    def receive(self):
+        rep = self.file.readline().strip().split(' ')
         response = rep[0]
         args = rep[0:]
 
