@@ -96,7 +96,7 @@ class ServerGame:
         self.game = Game(id_game, player1, player2)
     
     def movePiece(self, start, end, color):
-        if self.game.current_color() == color:
+        if self.game.current_color() == color.name:
             self.game.move(start, end)
             if color == Color.WHITE:
                 self.sess2.send_adversary_move(start, end)
@@ -153,7 +153,7 @@ class ServerGame:
         if self.game.time_white <= 0 or self.game.time_black <= 0:
             self.game.set_finish()
 
-        if self.game.is_checkmate(self.current_color):
+        if self.game.is_checkmate(self.current_color.name):
             self.game.set_finish()
             if self.current_color == Color.BLACK:
                 self.sess2.loose()
@@ -165,8 +165,7 @@ class ServerGame:
                 self.end_game("loose", "win")
                 
 
-        if self.game.is_stalemate(self.current_color):
-            print("test")
+        if self.game.is_stalemate(self.current_color.name):
             self.game.set_finish()
             self.sess1.draw()
             self.sess2.draw()
@@ -273,7 +272,7 @@ class Session:
     def receive(self):
         rep = self.file.readline().strip().split(' ')
         response = rep[0]
-        args = rep[0:]
+        args = rep[1:]
         print(rep)
 
         match response:

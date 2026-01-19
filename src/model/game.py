@@ -297,10 +297,8 @@ class Game:
                 piece = case.get_piece()
                 if piece is not None:
                     if piece.get_color().name == player_color:
-
                         for end_pos in piece.accessible_spots():
-                            if not self.king_in_check_after_move(
-                                    case.get_pos(), end_pos, player_color):
+                            if not self.king_in_check_after_move(case.get_pos(), end_pos, player_color):
                                 return True
         return False
 
@@ -329,7 +327,6 @@ class Game:
         Returns:
             bool: True if the player is stalemated.
         """
-        if not self.king_in_danger(player_color) and not self.has_legal_move(
-                player_color):
+        if not self.king_in_danger(player_color) and not self.has_legal_move(player_color):
             return True
         return False
