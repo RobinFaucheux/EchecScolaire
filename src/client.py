@@ -44,7 +44,7 @@ class Client:
                 self.sock.connect((self.host, self.port))
                 self.file = self.sock.makefile(mode="rw")
                 print("Connection effectuee avec succes")
-
+                co_ok = True
                 #TODO register, connexion
             except:
                 print("Veuillez entrer des valeurs correctes")
@@ -75,6 +75,7 @@ class Client:
         self.file.close()
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
+        self.quit = True
     
     def receive(self):
         rep = self.file.readline().strip().split(' ')
@@ -126,7 +127,7 @@ class Client:
             case 'ERR':
                 print('ERREUR SERVEUR')
 
-    def play(self, start, end):
+    def play_piece(self, start, end):
         self.send(f"play {start} {end}")
 
     def send_rematch(self):
@@ -142,7 +143,7 @@ class Client:
         print("case d'arrivee ?")
         end = input()
         self.game.move(start, end)
-        self.play(start, end)
+        self.play_piece(start, end)
 
     def play(self):
         print("Que voulez vous jouer ? (quit pour quitter, leave pour abandonner )")
@@ -160,30 +161,20 @@ class Client:
 
 
     def next_turn(self):
-        self.game.get_board().plateau_terminal()
+        print(self.game.get_board().plateau_terminal())
         if self.game.current_color() == self.color.name:
             self.play()
+            self.receive()
+        else:
+            self.receive()
+        self.game.set_turn(self.game.get_turn() + 1)
 
 
     def main_client(self):
-        quit = False
-        while not quit:
-            rep = input("commande : ") 
-            if rep == "quit": 
-                quit = False
-            rep+="\n"
-            self.file.write(rep)
-            self.file.flush()
-            print(self.file.readline())
-        
-        self.file.write("quit\n")
-        self.file.flush()
-        print(self.file.readline(),end="")
-        self.file.close()
-        self.sock.shutdown(socket.SHUT_RDWR)
-        self.sock.close()
+        self.quit = False
+        while not self.quit:
+            self.next_turn()
 
 
 if __name__ == "__main__":
     cl = Client()
-    cl.main_client()

@@ -182,7 +182,6 @@ class ServerGame:
 
     def mainGameServer(self):
         while self.sess1.opened and self.sess2.opened:
-            self.game.get_board().plateau_terminal()
             self.current_player.receive()
             self.next_turn()
             
