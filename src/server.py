@@ -17,7 +17,7 @@ class Serveur:
 
     Attributes:
         counter (int): A counter for tracking connections or sessions (currently unused).
-    """
+    """ 
 
     def __init__(self, connection):
         self.counter = 0
@@ -103,7 +103,7 @@ class ServerGame:
             else:
                 self.sess1.send_adversary_move(start, end)
         try:
-            queries.save_coup(self.connection, self.game.get_idG(),
+            queries.save_coup(self.connection, self.game.get_id_g(),
                                 self.game.get_turn(), start,
                                 end)
         except Exception:
@@ -140,9 +140,9 @@ class ServerGame:
             self.game.get_joueur(0).calculate_elo(old_elo_player2, status_player_1)
             self.game.get_joueur(1).calculate_elo(old_elo_player1, status_player_2)
 
-            queries.save_final_game(self.connexion, self.game, self.game.get_idG(),
+            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(0), status_player_1)
-            queries.save_final_game(self.connexion, self.game, self.game.get_idG(),
+            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(1), status_player_2)
         except Exception as e:
             print(f"Error saving game results: {e}")
@@ -166,6 +166,7 @@ class ServerGame:
                 
 
         if self.game.is_stalemate(self.current_color):
+            print("test")
             self.game.set_finish()
             self.sess1.draw()
             self.sess2.draw()
@@ -274,6 +275,7 @@ class Session:
         rep = self.file.readline().strip().split(' ')
         response = rep[0]
         args = rep[0:]
+        print(rep)
 
         match response:
             case "register":
@@ -537,7 +539,7 @@ class Session:
                     )
 
                     try:
-                        queries.save_coup(self.connection, game.get_idG(),
+                        queries.save_coup(self.connection, game.get_id_g(),
                                           game.get_turn(), final_start,
                                           final_end)
                     except Exception:
@@ -555,9 +557,9 @@ class Session:
                 game.get_joueur(0).calculate_elo(old_elo_player2, "won")
                 game.get_joueur(1).calculate_elo(old_elo_player1, "loose")
 
-                queries.save_final_game(self.connexion, game, game.get_idG(),
+                queries.save_final_game(self.connexion, game, game.get_id_g(),
                                         game.get_joueur(0), "won")
-                queries.save_final_game(self.connexion, game, game.get_idG(),
+                queries.save_final_game(self.connexion, game, game.get_id_g(),
                                         game.get_joueur(1), "loose")
             except Exception as e:
                 print(f"Error saving game results: {e}")
