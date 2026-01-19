@@ -22,6 +22,9 @@ class Client:
         "     EchecScolaire    \n"
         "======================")
 
+    def player_connexion(self):
+        print()
+
     def connect(self):
         co_ok = False
         while not co_ok:
@@ -161,7 +164,7 @@ class Client:
 
 
     def next_turn(self):
-        print(self.game.get_board().plateau_terminal())
+        self.game.get_board().plateau_terminal()
         if self.game.current_color() == self.color.name:
             self.play()
             self.receive()
