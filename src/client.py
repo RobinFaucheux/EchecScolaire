@@ -77,6 +77,7 @@ class Client:
                         case _:
                             print("Veuillez entrer un nom/mdp correct")
                 print("Connexion effectuee avec succes")
+                print("Attente de l'autre joueur")
                 
             except:
                 print("Veuillez entrer des valeurs correctes")
