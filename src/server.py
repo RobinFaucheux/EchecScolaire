@@ -185,6 +185,7 @@ class ServerGame:
             self.game.get_board().plateau_terminal()
             self.current_player.receive()
             self.next_turn()
+            
         
         
 
