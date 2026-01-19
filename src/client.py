@@ -1,6 +1,9 @@
 import socket
 from model.color import Color
 from model.game import Game
+from colorama import init
+
+init()
 
 HOST = "127.0.0.1"
 PORT = 5555
@@ -172,25 +175,104 @@ class Client:
         if rep.upper() == 'Y':
             self.send_rematch()
 
-    def move(self, start):
-        print("case d'arrivee ?")
-        end = input()
-        self.game.move(start, end)
-        self.play_piece(start, end)
+    def ask_end_piece(self, start):
+        self.game.allowed_moves_graphic(start)
+        print("Ou voulez vous la déplacer ? (cancel pour annuler le coup)")
+        start_piece_tuple = self.game.get_board().translate(start)
+        start_case_piece = self.game.get_board().get_case(start_piece_tuple)
+
+        while True:
+            end = input().strip().lower()
+
+            if end == "cancel":
+                self.game.get_board().plateau_terminal()
+                self.play()
+                break
+
+            if len(end) < 2:
+                print("Rentrez une lettre suivie d'un chiffre")
+                continue
+
+            if not (end[0].isalpha() and
+                    end[1:].isdigit()):
+                print("Rentrez une lettre suivie d'un chiffre")
+                continue
+
+            end_piece_tuple = self.game.get_board().translate(end)
+            if not self.game.get_board().in_board(end_piece_tuple):
+                print("Cette case n'est pas sur le plateau")
+                continue
+            
+            end_case_piece = self.game.get_board().get_case(end_piece_tuple)
+            if self.game.king_in_check_after_move(start_case_piece.get_pos(),
+                                             end_case_piece.get_pos(),
+                                             self.game.current_color()):
+                print(
+                    "Votre mouvement met votre roi en echec, choisissez une autre piece")
+                self.game.get_board().plateau_terminal()
+                self.play()
+                break
+
+            else :
+                reussi = self.game.move(start, end)
+
+                if not reussi:
+                    print("Mouvement impossible, veuillez choisir une case verte")
+                    continue
+
+                self.play_piece(start, end)
+                break
 
     def play(self):
-        print("Que voulez vous jouer ? (quit pour quitter, leave pour abandonner )")
-        command = input().strip()
-        if command == "quit":
-            self.send("leave")
-            self.finish_game()
-            self.send("quit")
-            self.exit()
-        if command == "leave":
-            self.send('leave')
-            self.finish_game()
-        else:
-            self.move(command)
+        print("Qu'elle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner )")
+
+        while True:
+            command = input().strip().lower()
+
+            if command == "quit":
+                self.send("leave")
+                self.finish_game()
+                self.send("quit")
+                self.exit()
+                break
+
+            if command == "leave":
+                self.send('leave')
+                self.finish_game()
+                break
+
+            if self.game.king_in_danger(self.game.current_color()):
+                print("Vous êtes en echec")
+
+            if len(command) < 2:
+                print("c")
+                continue
+
+            if not (command[0].isalpha() and command[1:].isdigit()):
+                print("Rentrez une lettre suivie d'un chiffre")
+                continue
+
+            start_piece_tuple = self.game.get_board().translate(command)
+            if not self.game.get_board().in_board(start_piece_tuple):
+                print("Cette case n'est pas sur le plateau")
+                continue
+
+            start_case_piece = self.game.get_board().get_case(start_piece_tuple)
+            if start_case_piece.get_piece() is None:
+                print("Pas de piece sur cette case")
+                continue
+
+            if start_case_piece.get_piece().get_color().name != self.game.current_color():
+                print("Ce n'est pas votre pièce")
+                continue
+
+            if start_case_piece.get_piece().accessible_spots() == []:
+                print("Cette pièce ne peut pas bouger")
+                continue
+
+            else:
+                self.ask_end_piece(command)
+                break
 
 
     def next_turn(self):
