@@ -186,12 +186,12 @@ class ServerGame:
         if color == Color.WHITE:
             self.sess2.win()
             self.sess1.loose()
-            self.end_game('loose', 'win')
+            self.end_game('loose', 'won')
 
         else:
             self.sess1.win()
             self.sess2.loose()
-            self.end_game('win', 'loose')
+            self.end_game('won', 'loose')
 
 
 
@@ -238,11 +238,11 @@ class ServerGame:
             if self.current_color == Color.BLACK:
                 self.sess2.loose()
                 self.sess1.win()
-                self.end_game("win", "loose")
+                self.end_game("won", "loose")
             else:
                 self.sess2.win()
                 self.sess1.loose()
-                self.end_game("loose", "win")
+                self.end_game("loose", "won")
                 
 
         if self.game.is_stalemate(self.current_color.name):
