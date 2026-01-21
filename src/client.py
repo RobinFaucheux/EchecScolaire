@@ -54,7 +54,7 @@ class Client:
                 
                 self.sock.connect((self.host, self.port))
                 self.file = self.sock.makefile(mode="rw")
-                print("Connection effectuee avec succes")
+                print("Connection au serveur effectuee avec succes")
                 co_ok = True
                 player_co = False
                 while not player_co:
@@ -77,9 +77,11 @@ class Client:
                             print(rep)
                             if rep == "OK":
                                 player_co = True
+                        case "quit":
+                            self.exit()
                         case _:
                             print("Veuillez entrer un nom/mdp correct")
-                print("Connexion effectuee avec succes")
+                print("Connexion a votre compte effectuee avec succes")
                 print("Attente de l'autre joueur")
                 
             except:
