@@ -7,6 +7,7 @@ from model.constant import TEXTE_RED, RESET
 import db.init_db as db
 from db import queries
 from colorama import init
+from threading import Thread
 
 init()
 
@@ -33,6 +34,7 @@ class Serveur:
         """
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        lstThread = []
 
         try:
             sock.bind(("0.0.0.0", port))
@@ -41,30 +43,34 @@ class Serveur:
         except Exception as e:
             print(f"Error binding server: {e}")
             return
-
+        
         try:
-            print("Waiting for player1...")
-            cli1, addr1 = sock.accept()
+            while True:
+                    nb_joueur = 0
+                    duel = []
+                    
+                    while nb_joueur < 2:
 
-            print(f"New connection from {addr1}")
-            print(f"Waiting for player log in")
-            pc1 = PlayerConnexion(cli1, self.connection)
-            while pc1.player is None:
-                pc1.receive()
+                        print("Waiting for player...")
+                        cli, addr = sock.accept()
+                        print(f"New connection from {addr}")
 
-            print("Waiting for player2...")
-            cli2, addr2 = sock.accept()
-            print(f"Waiting for player log in")
-            pc2 = PlayerConnexion(cli2, self.connection)
-            while pc2.player is None:
-                pc2.receive()
+                        print(f"Waiting for player log in")
+                        pc = PlayerConnexion(cli, self.connection)
+                        while pc.player is None:
+                            pc.receive()
 
-            print(f"New connection from {addr2}")
+                        duel.append((cli, pc))
+                        nb_joueur += 1
+
+                    servGame = ServerGame(self, duel[0][0], duel[1][0], self.connection, duel[0][1].player, duel[1][1].player)
+                    t = Thread(target=servGame.mainGameServer)
+                    t.start()
+                    
+                    lstThread.append(t)
+                    print(f"Partie lancée ! Nombre de threads actifs : {len(lstThread)}")
+                            
             
-            servGame = ServerGame(self, cli1, cli2, self.connection, pc1.player, pc2.player)
-            servGame.mainGameServer()
-
-            print("Session finished.")
 
         except KeyboardInterrupt:
             print("Server interrupted by user.")
@@ -78,7 +84,7 @@ class Serveur:
                 pass
             sys.exit()
 
-class PlayerConnexion:
+class PlayerConnexion(Thread):
     def __init__(self, sock, connexion):
         self.sock = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
