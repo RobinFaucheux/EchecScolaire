@@ -1,5 +1,7 @@
 import socket
 import sys
+
+from flask import session
 from model.game import Game
 from model.color import Color
 from model.player import Player
@@ -23,6 +25,10 @@ class Serveur:
     def __init__(self, connection):
         self.counter = 0
         self.connection = connection
+        self.sock = socket.socket()
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.lstThread = []
+
 
     def main_server(self, port):
         """
@@ -32,13 +38,10 @@ class Serveur:
         - Creates a Session object for the connected client.
         - Handles exceptions and ensures the socket is closed on exit.
         """
-        sock = socket.socket()
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        lstThread = []
-
+        
         try:
-            sock.bind(("0.0.0.0", port))
-            sock.listen(1)
+            self.sock.bind(("0.0.0.0", port))
+            self.sock.listen(1)
             print(f"Server listening on port {port}...")
         except Exception as e:
             print(f"Error binding server: {e}")
@@ -52,7 +55,7 @@ class Serveur:
                     while nb_joueur < 2:
 
                         print("Waiting for player...")
-                        cli, addr = sock.accept()
+                        cli, addr = self.sock.accept()
                         print(f"New connection from {addr}")
 
                         print(f"Waiting for player log in")
@@ -67,8 +70,9 @@ class Serveur:
                     t = Thread(target=servGame.mainGameServer)
                     t.start()
                     
-                    lstThread.append(t)
-                    print(f"Partie lancée ! Nombre de threads actifs : {len(lstThread)}")
+                    self.lstThread.append(t)
+                    print(f"Partie lancée ! Nombre de threads actifs : {len(self.lstThread)}")
+    
                             
             
 
@@ -78,11 +82,28 @@ class Serveur:
             print(f"Server Error: {e}")
         finally:
             try:
-                sock.close()
+                self.sock.close()
                 print("Server socket closed. Exiting.")
             except Exception:
                 pass
             sys.exit()
+    
+    def new(self, cli1):
+        print("Waiting for player...")
+        cli, addr = self.sock.accept()
+        print(f"New connection from {addr}")
+
+        print(f"Waiting for player log in")
+        pc = PlayerConnexion(cli, self.connection)
+        while pc.player is None:
+            pc.receive()
+        
+        servGame = ServerGame(self, cli1.socket, cli, self.connection, cli1.player1, pc.player)
+        t = Thread(target=servGame.mainGameServer)
+        t.start()
+
+        self.lstThread.append(t)
+
 
 class PlayerConnexion(Thread):
     def __init__(self, sock, connexion):
@@ -147,7 +168,7 @@ class PlayerConnexion(Thread):
         
 
 class ServerGame:
-    def __init__(self, serveur, sock1, sock2, connection, player1, player2 ):
+    def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2):
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2
@@ -171,6 +192,9 @@ class ServerGame:
 
         self.game = Game(id_game, player1, player2)
 
+
+    def new(self, session):
+        self.serveur.new(session)
 
     def movePiece(self, start, end, color):
         if self.game.current_color() == color.name:
@@ -430,8 +454,7 @@ class Session:
                     self.send('ERR')
             case "new":
                 try:
-                    #TODO
-                    pass
+                    self.serverGame.new(self)
                 except:
                     pass
             case _:

@@ -33,6 +33,36 @@ class Client:
     def player_connexion(self):
         print()
 
+    def replay_prompt(self):
+        rep_ok = False
+        while not rep_ok:
+            try :
+                print("Voulez-vous rejouer contre la meme personne ?")
+                print("1. relancer contre la meme personne \n" \
+                "2. relancer contre une autre personne \n"
+                "3. Quitter")
+                rep = input().strip()
+
+                match rep:
+                    case "1":
+                        self.replay_same()
+                    case "2":
+                        self.replay_other()
+                    case _:
+                        self.exit()
+            except:
+                pass
+
+    def replay_other(self):
+        self.send("new")
+        print("En attente d'un autre joueur")
+        self.receive()
+    def replay_same(self):
+        self.send("replay")
+        print("En attente de l'autre joueur")
+        self.receive()
+    
+
     def connect(self):
         co_ok = False
         while not co_ok:
@@ -82,7 +112,7 @@ class Client:
                         case _:
                             print("Veuillez entrer un nom/mdp correct")
                 print("Connexion a votre compte effectuee avec succes")
-                print("Attente de l'autre joueur")
+                print("Attente d'un autre joueur")
                 
             except:
                 print("Veuillez entrer des valeurs correctes")
@@ -107,6 +137,7 @@ class Client:
             print('Defaite')
         else:
             print('Egalite')
+        self.demander_rematch()
         
 
     def exit(self):
