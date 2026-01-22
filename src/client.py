@@ -3,6 +3,8 @@ from model.color import Color
 from model.game import Game
 from colorama import init
 import json
+import struct
+import crypto_utils
 
 init()
 
@@ -41,7 +43,34 @@ class Client:
             port = int(port)
             self.port = port       
         self.sock.connect((self.host, self.port))
-        self.file = self.sock.makefile(mode="rw")
+        
+        # Handshake
+        try:
+            # 1. Recevoir clé serveur
+            len_data = self.sock.recv(4)
+            pub_len = struct.unpack('!I', len_data)[0]
+            server_pub_pem = self.sock.recv(pub_len)
+            server_pub = crypto_utils.charger_cle_publique(server_pub_pem)
+
+            # 2. Générer mes clés
+            priv, pub = crypto_utils.generer_cles_ecdh()
+            pub_pem = crypto_utils.serialiser_cle_publique(pub)
+
+            # 3. Envoyer ma clé publique
+            self.sock.sendall(struct.pack('!I', len(pub_pem)) + pub_pem)
+
+            # 4. Secret partagé et clé de session
+            shared_secret = crypto_utils.calculer_secret_partage(priv, server_pub)
+            session_key = crypto_utils.deriver_cle_session(shared_secret)
+            
+            self.file = crypto_utils.SocketSecurise(self.sock, session_key)
+            print("Connexion sécurisée établie.")
+
+        except Exception as e:
+            print(f"Erreur de connexion sécurisée: {e}")
+            self.sock.close()
+            return
+
         print("Connection au serveur effectuee avec succes")
 
     def connection_player(self):

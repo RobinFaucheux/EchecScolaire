@@ -1,7 +1,7 @@
 create table PLAYER (
     idP int primary key auto_increment,
     pseudo varchar(50),
-    passwd varchar(50),
+    passwd varchar(255),
     elo int default 1000
 );
 

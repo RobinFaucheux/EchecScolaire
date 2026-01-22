@@ -1,6 +1,8 @@
 import socket
 import sys
 import json
+import struct
+import crypto_utils
 from model.game import Game
 from model.color import Color
 from model.player import Player
@@ -28,6 +30,23 @@ class Serveur:
         self.sock = None
         self.lstThread = []
 
+
+    def handshake(self, sock):
+        """Performs ECDH handshake and returns session key."""
+        try:
+            priv, pub = crypto_utils.generer_cles_ecdh()
+            pub_pem = crypto_utils.serialiser_cle_publique(pub)
+            sock.sendall(struct.pack('!I', len(pub_pem)) + pub_pem)
+            len_data = sock.recv(4)
+            if not len_data: return None
+            pub_len = struct.unpack('!I', len_data)[0]
+            client_pub_pem = sock.recv(pub_len)
+            client_pub = crypto_utils.charger_cle_publique(client_pub_pem)
+            shared_secret = crypto_utils.calculer_secret_partage(priv, client_pub)
+            return crypto_utils.deriver_cle_session(shared_secret)
+        except Exception as e:
+            print(f"Handshake error: {e}")
+            return None    
 
     def main_server(self, port):
         """
@@ -73,15 +92,21 @@ class Serveur:
         cli, addr = self.sock.accept()
         print(f"New connection from {addr}")
 
+        # Handshake
+        session_key = self.handshake(cli)
+        if not session_key:
+            cli.close()
+            return
+
         print(f"Waiting for player log in")
-        pc = PlayerConnexion(cli, self.connection)
+        pc = PlayerConnexion(cli, self.connection, session_key)
         while pc.player is None:
             pc.receive()
         
         servGame = ServerGame(self, cli1.socket, cli, self.connection, cli1.player1, pc.player)
         t = Thread(target=servGame.mainGameServer)
         t.start()
-
+        
         self.lstThread.append(t)
 
 
@@ -102,9 +127,12 @@ class Serveur:
 
 
 class PlayerConnexion(Thread):
-    def __init__(self, sock, connexion):
+    def __init__(self, sock, connexion, session_key=None):
         self.sock = sock
-        self.file = sock.makefile(mode="rw", encoding="utf-8")
+        if session_key:
+            self.file = crypto_utils.SocketSecurise(sock, session_key)
+        else:
+            self.file = sock.makefile(mode="rw", encoding="utf-8")
         self.player = None
         self.connexion = connexion
         self.ready = False
@@ -127,8 +155,9 @@ class PlayerConnexion(Thread):
     def connect(self, name, passwd):
         row = queries.connect_player(self.connexion, name)
         if row is not None:
-            password = row[2]
-            if password == passwd:
+            hashed_stored = row[2]
+            # Vérifie le mot de passe hashé
+            if crypto_utils.verifier_mdp(hashed_stored, passwd):
                 self.player = Player(row[0], row[1], row[3], [])
                 self.send('OK')
             else:
@@ -138,7 +167,9 @@ class PlayerConnexion(Thread):
 
 
     def register(self, name, passwd):
-        id = queries.register_player(self.connexion, name, passwd)
+        # Hasher le mot de passe avant stockage
+        hashed = crypto_utils.hacher_mdp(passwd)
+        id = queries.register_player(self.connexion, name, hashed)
         if id is not None:
             row = queries.collect_player(self.connexion, id)
             self.player = Player(row[0], row[1], row[3], [])
