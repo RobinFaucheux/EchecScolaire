@@ -2,6 +2,7 @@ import socket
 from model.color import Color
 from model.game import Game
 from colorama import init
+import json
 
 init()
 
@@ -80,12 +81,17 @@ class Client:
                         case _:
                             print("Veuillez entrer un nom/mdp correct")
                 print("Connexion effectuee avec succes")
-                choice = input("Que voulez vous faire ? (1 : Voir son historique / 2 : Rechercher une partie) : ").lower()
-                while choice != "1" and choice != "2":
-                    if choice == "2":    
-                        print("Attente d'un autre joueur")
-                    else:
-                        self.send(f'list_games')
+                choice = ""
+                while choice not in ["1", "2"]:
+                    choice = input("Que voulez vous faire ? (1 : Voir son historique / 2 : Jouer) : ").strip()
+                if choice == "1":
+                    self.send(f'list_games')
+                    self.receive()
+                    continue
+                else:    
+                    print("Attente d'un autre joueur")
+                    return
+                
                 
             except:
                 print("Veuillez entrer des valeurs correctes")
@@ -163,6 +169,9 @@ class Client:
                     self.main_client()
                 except:
                     print("ERR")
+            case 'list_games':
+                json_str = " ".join(args)
+                self.get_historicals(json_str)
             case 'OK':
                 print("Succes")
             case 'ERR':
@@ -179,6 +188,22 @@ class Client:
         rep = input()
         if rep.upper() == 'Y':
             self.send_rematch()
+
+    def get_historicals(self, json_str):
+        historicals = json.loads(json_str)
+        if not historicals:
+            print("Vous n'avez aucune partie enregistrée dans votre historique")
+            return
+        print("\n=== HISTORIQUE DES PARTIES ===")
+        print(f"{'ID':<5} | {'ADVERSAIRE':<15} | {'RÉSULTAT':<10}")
+        print("-" * 40)
+        for game in historicals:
+            id_game = game.get("id_game", "N/A")
+            adversaire = game.get("pseudo_joueur", "Inconnu")
+            resultat = game.get("result", "En cours")
+            print(f"{id_game:<5} | {adversaire:<15} | {resultat:<10}")  
+        print("-" * 40)
+
 
     def ask_end_piece(self, start):
         self.game.allowed_moves_graphic(start)

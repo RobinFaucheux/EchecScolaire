@@ -1,5 +1,6 @@
 import socket
 import sys
+import json
 from model.game import Game
 from model.color import Color
 from model.player import Player
@@ -216,25 +217,15 @@ class ServerGame:
             player = self.game.get_joueur(1)
         
         id = player.get_id()
-
         player = queries.collect_player(self.connexion, id)
         player_obj = None
         if player:
             player_obj = Player(player[0], player[1], player[3])
-            player_obj.set_historical(
-                queries.collect_historic_game_of_player(connexion, player_obj))
-            
+            player_obj.set_historical(queries.collect_historic_game_of_player(connexion, player_obj))   
             historicals = player_obj.get_historical()
-            if historicals != []:
-                game_strings = []
-                for game in player_obj.get_historical():
-                    line = f"{game['id_game']}|{game['pseudo_joueur']}|{game['result']}"
-                    game_strings.append(line)
-
-                return "OK " + ";".join(game_strings)
-            else:
-                return "OK Aucune partie enregistrée"
-        
+            json_data = json.dumps(historicals)
+            print(json_data)
+            return "list_games " + json_data
         return "ERR"
 
 
@@ -466,8 +457,10 @@ class Session:
                     pass
             case "list_games":
                 try:
-                    historique_txt = self.serverGame.get_historical(self.color)
-                    self.send(historique_txt)
+                    print("nigger")
+                    historicals = self.serverGame.get_historical(self.color)
+                    print(historicals)
+                    self.send(historicals)
                 except:
                     self.send('ERR')
             case _:
