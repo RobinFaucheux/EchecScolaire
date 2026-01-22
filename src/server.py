@@ -24,6 +24,7 @@ class Serveur:
     def __init__(self, connection):
         self.counter = 0
         self.connection = connection
+        self.matchmaking_queue = []
 
     def main_server(self, port):
         """
@@ -35,7 +36,6 @@ class Serveur:
         """
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        lstThread = []
 
         try:
             sock.bind(("0.0.0.0", port))
@@ -47,32 +47,11 @@ class Serveur:
         
         try:
             while True:
-                    nb_joueur = 0
-                    duel = []
-                    
-                    while nb_joueur < 2:
-
-                        print("Waiting for player...")
-                        cli, addr = sock.accept()
-                        print(f"New connection from {addr}")
-
-                        print(f"Waiting for player log in")
-                        pc = PlayerConnexion(cli, self.connection)
-                        while pc.player is None:
-                            pc.receive()
-
-                        duel.append((cli, pc))
-                        nb_joueur += 1
-
-                    servGame = ServerGame(self, duel[0][0], duel[1][0], self.connection, duel[0][1].player, duel[1][1].player)
-                    t = Thread(target=servGame.mainGameServer)
-                    t.start()
-                    
-                    lstThread.append(t)
-                    print(f"Partie lancée ! Nombre de threads actifs : {len(lstThread)}")
+                cli, addr = sock.accept()
+                print(f"New connection from {addr}")
+                t = Thread(target=self.handle_lobby, args=(cli,))
+                t.start()
                             
-            
-
         except KeyboardInterrupt:
             print("Server interrupted by user.")
         except Exception as e:
@@ -85,12 +64,44 @@ class Serveur:
                 pass
             sys.exit()
 
+
+    def handle_lobby(self, cli):
+        pc = PlayerConnexion(cli, self.connection)
+        while not pc.ready:
+            pc.receive()
+        self.matchmaking_queue.append((cli, pc))
+        print(f"Joueur {pc.player.get_pseudo()} en attente.")
+        if len(self.matchmaking_queue) >= 2:
+            p1_cli, p1_pc = self.matchmaking_queue.pop(0)
+            p2_cli, p2_pc = self.matchmaking_queue.pop(0)
+            servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
+            t = Thread(target=servGame.mainGameServer)
+            t.start()
+
+
+
 class PlayerConnexion(Thread):
     def __init__(self, sock, connexion):
         self.sock = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
         self.player = None
         self.connexion = connexion
+        self.ready = False
+
+    
+    def send(self, message):
+        """
+        Sends a message to the client through the socket.
+
+        Args:
+            message (str): The message to send.
+        """
+        try:
+            self.file.write(message + "\n")
+            self.file.flush()
+        except Exception:
+            pass
+
 
     def connect(self, name, passwd):
         row = queries.connect_player(self.connexion, name)
@@ -104,6 +115,7 @@ class PlayerConnexion(Thread):
         else:
             self.send("ERR")
 
+
     def register(self, name, passwd):
         id = queries.register_player(self.connexion, name, passwd)
         if id is not None:
@@ -112,8 +124,20 @@ class PlayerConnexion(Thread):
             self.send('OK')
         else:
             self.send("ERR")
-    
 
+
+    def get_historical(self, player: Player):
+        id = player.get_id()
+        player = queries.collect_player(self.connexion, id)
+        player_obj = None
+        if player:
+            player_obj = Player(player[0], player[1], player[3])
+            player_obj.set_historical(queries.collect_historic_game_of_player(self.connexion, player_obj))   
+            historicals = player_obj.get_historical()
+            json_data = json.dumps(historicals)
+            return "list_games " + json_data
+        return "ERR"
+    
 
     def receive(self):
         rep = self.file.readline().strip().split(' ')
@@ -130,22 +154,25 @@ class PlayerConnexion(Thread):
                 nomJ = args[0]
                 mdpJ = args[1]
                 self.connect(nomJ, mdpJ)
-         
-    def send(self, message):
-        """
-        Sends a message to the client through the socket.
 
-        Args:
-            message (str): The message to send.
-        """
-        try:
-            self.file.write(message + "\n")
-            self.file.flush()
-        except Exception:
-            pass
-    
-    
-        
+            case "list_games":
+                try:
+                    if self.player is not None:
+                        historicals = self.get_historical(self.player)
+                        self.send(historicals)
+                    else:
+                        self.send("ERR")
+                except:
+                    self.send('ERR')
+
+            case "new":
+                try:
+                    self.ready = True
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+
+
 
 class ServerGame:
     def __init__(self, serveur, sock1, sock2, connection, player1, player2 ):
@@ -208,25 +235,6 @@ class ServerGame:
         
         if len(self.replay_count == 2):
             self = ServerGame(self.serveur, self.socket1, self.socket2, self.connexion)
-
-    
-    def get_historical(self, color):
-        if color == Color.WHITE:
-            player = self.game.get_joueur(0)
-        else:
-            player = self.game.get_joueur(1)
-        
-        id = player.get_id()
-        player = queries.collect_player(self.connexion, id)
-        player_obj = None
-        if player:
-            player_obj = Player(player[0], player[1], player[3])
-            player_obj.set_historical(queries.collect_historic_game_of_player(connexion, player_obj))   
-            historicals = player_obj.get_historical()
-            json_data = json.dumps(historicals)
-            print(json_data)
-            return "list_games " + json_data
-        return "ERR"
 
 
     def next(self):
@@ -408,20 +416,6 @@ class Session:
         print(rep)
 
         match response:
-            case "register":
-                try:
-                    nomJ = args[0]
-                    mdpJ = args[1]
-                    self.register(nomJ, mdpJ)
-                except:
-                    self.send('ERR')
-            case "connect":
-                try:
-                    nomJ = args[0]
-                    mdpJ = args[1]
-                    self.connect(nomJ, mdpJ)
-                except:
-                    self.send('ERR')
             case "play":
                 try:
                     dep = args[0]
@@ -455,18 +449,8 @@ class Session:
                     pass
                 except:
                     pass
-            case "list_games":
-                try:
-                    print("nigger")
-                    historicals = self.serverGame.get_historical(self.color)
-                    print(historicals)
-                    self.send(historicals)
-                except:
-                    self.send('ERR')
             case _:
                 self.send('ERR')
-
-
 
     def disconnect(self):
         self.file.close()

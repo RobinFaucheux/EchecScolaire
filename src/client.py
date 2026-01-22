@@ -16,7 +16,7 @@ class Client:
         self.sock = socket.socket()
         self.start()
         self.file = None
-        self.connect()
+        self.lobby()
         self.game = None
         self.receive()
 
@@ -25,73 +25,90 @@ class Client:
         "======================\n"
         "     EchecScolaire    \n"
         "======================")
+
+    def connection_to_server(self):
+        print("Entrez l'ip du serveur (defaut : serveur local)")
+        host = str(input(""))
+        if host == "":
+            host = "localhost"
+        self.host = host
+        print("Entrez le port du serveur (defaut : 5555)")
+        port = input("")
+        if port == "":
+            port = 5555
+            self.port = port
+        else:
+            port = int(port)
+            self.port = port       
+        self.sock.connect((self.host, self.port))
+        self.file = self.sock.makefile(mode="rw")
+        print("Connection au serveur effectuee avec succes")
+
+    def connection_player(self):
+        player_co = False
+        print("1. Se connecter \n" \
+              "2. S'enregistrer")
+        commande = input().strip()
+        match commande:
+            case "1":
+                name  = input ("nom :")
+                mdp = input("mot de passe : ")
+                self.send(f'connect {name} {mdp}')
+                rep = self.file.readline().strip()
+                print(rep)
+                if rep == "OK":
+                    player_co = True
+            case "2":
+                name  = input ("nom :")
+                mdp = input("mot de passe : ")
+                self.send(f'register {name} {mdp}')
+                rep = self.file.readline().strip()
+                print(rep)
+                if rep == "OK":
+                    player_co = True
+            case _:
+                print("Veuillez entrer un nom/mdp correct")
+        return player_co
     
-    def connexion_menu(self):
+    def menu_before_game(self):
+        ready = False
         print("" \
-        "1. Se connecter \n"
-        "2. S'enregistrer")
+        "1. Voir son historique \n"
+        "2. Chercher une game \n"
+        "3. Se déconnecter")
+        commande = input().strip()
+        match commande:
+            case "1":
+                self.send("list_games")
+                self.receive()
+            case "2":
+                self.send("new")  
+                rep = self.file.readline().strip()
+                if rep == "OK":
+                    ready = True
+                    print("En attente de joueurs")
+            case "3":
+                # self.send("quit") TODO
+                # self.exit()
+                pass
+            case _:
+                print('Veuillez entrer  une commande correctes')
+        return ready
 
-    def player_connexion(self):
-        print()
-
-    def connect(self):
-        co_ok = False
-        while not co_ok:
+    def lobby(self):
+        player_co = False
+        ready = False
+        while not ready:
             try :
-                print("Entrez l'ip du serveur (defaut : serveur local)")
-                host = str(input(""))
-                if host == "":
-                    host = "localhost"
-                self.host = host
-                
-                print("Entrez le port du serveur (defaut : 5555)")
-                port = input("")
-                if port == "":
-                    port = 5555
-                    self.port = port
-                else:
-                    port = int(port)
-                    self.port = port
-                
-                self.sock.connect((self.host, self.port))
-                self.file = self.sock.makefile(mode="rw")
-                print("Connection effectuee avec succes")
-                co_ok = True
-                player_co = False
-                while not player_co:
-                    self.connexion_menu()
-                    commande = input().strip()
-                    match commande:
-                        case "1":
-                            name  = input ("nom :")
-                            mdp = input("mot de passe : ")
-                            self.send(f'connect {name} {mdp}')
-                            rep = self.file.readline().strip()
-                            print(rep)
-                            if rep == "OK":
-                                player_co = True
-                        case "2":
-                            name  = input ("nom :")
-                            mdp = input("mot de passe : ")
-                            self.send(f'register {name} {mdp}')
-                            rep = self.file.readline().strip()
-                            print(rep)
-                            if rep == "OK":
-                                player_co = True
-                        case _:
-                            print("Veuillez entrer un nom/mdp correct")
-                print("Connexion effectuee avec succes")
-                choice = ""
-                while choice not in ["1", "2"]:
-                    choice = input("Que voulez vous faire ? (1 : Voir son historique / 2 : Jouer) : ").strip()
-                if choice == "1":
-                    self.send(f'list_games')
-                    self.receive()
-                    continue
-                else:    
-                    print("Attente d'un autre joueur")
-                    return
-                
+                if self.file == None: 
+                    self.connection_to_server()
+
+                if not player_co:
+                    while not player_co:
+                        player_co = self.connection_player()
+                    print("Connexion réussie\nBienvenue !")
+
+                ready = self.menu_before_game()
                 
             except:
                 print("Veuillez entrer des valeurs correctes")
@@ -194,15 +211,15 @@ class Client:
         if not historicals:
             print("Vous n'avez aucune partie enregistrée dans votre historique")
             return
-        print("\n=== HISTORIQUE DES PARTIES ===")
-        print(f"{'ID':<5} | {'ADVERSAIRE':<15} | {'RÉSULTAT':<10}")
-        print("-" * 40)
+        print("======================")
+        print("      HISTORIQUE      ")
+        print("======================")
+        print("")
         for game in historicals:
-            id_game = game.get("id_game", "N/A")
             adversaire = game.get("pseudo_joueur", "Inconnu")
             resultat = game.get("result", "En cours")
-            print(f"{id_game:<5} | {adversaire:<15} | {resultat:<10}")  
-        print("-" * 40)
+            print(f"adversaire : {adversaire} | {resultat}")  
+        print("-" * 22)
 
 
     def ask_end_piece(self, start):
@@ -254,7 +271,7 @@ class Client:
                 break
 
     def play(self):
-        print("Qu'elle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner )")
+        print("Qu'elle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")
 
         while True:
             command = input().strip().lower()
