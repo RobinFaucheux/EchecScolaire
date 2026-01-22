@@ -42,6 +42,17 @@ class Game:
         """
         return self.joueurs[pos]
 
+    def set_joueur(self, p : Player, nb : int):
+        """sets the player
+
+        Args:
+            p (Player): player
+        """
+        if nb == 1:
+            self.joueurs = [p, self.joueurs[1]]
+        else:
+            self.joueurs = [self.joueurs[0], p]
+
     def get_id_g(self) -> int:
         """
         Returns the game ID.
@@ -314,10 +325,8 @@ class Game:
                 piece = case.get_piece()
                 if piece is not None:
                     if piece.get_color().name == player_color:
-
                         for end_pos in piece.accessible_spots():
-                            if not self.king_in_check_after_move(
-                                    case.get_pos(), end_pos, player_color):
+                            if not self.king_in_check_after_move(case.get_pos(), end_pos, player_color):
                                 return True
         return False
 
@@ -346,8 +355,7 @@ class Game:
         Returns:
             bool: True if the player is stalemated.
         """
-        if not self.king_in_danger(player_color) and not self.has_legal_move(
-                player_color):
+        if not self.king_in_danger(player_color) and not self.has_legal_move(player_color):
             return True
         return False
 
