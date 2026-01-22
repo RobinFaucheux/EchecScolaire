@@ -25,6 +25,9 @@ class Serveur:
         self.counter = 0
         self.connection = connection
         self.matchmaking_queue = []
+        self.sock = None
+        self.lstThread = []
+
 
     def main_server(self, port):
         """
@@ -51,6 +54,7 @@ class Serveur:
                 print(f"New connection from {addr}")
                 t = Thread(target=self.handle_lobby, args=(cli,))
                 t.start()
+
                             
         except KeyboardInterrupt:
             print("Server interrupted by user.")
@@ -58,11 +62,28 @@ class Serveur:
             print(f"Server Error: {e}")
         finally:
             try:
-                sock.close()
+                self.sock.close()
                 print("Server socket closed. Exiting.")
             except Exception:
                 pass
             sys.exit()
+    
+    def new(self, cli1):
+        print("Waiting for player...")
+        cli, addr = self.sock.accept()
+        print(f"New connection from {addr}")
+
+        print(f"Waiting for player log in")
+        pc = PlayerConnexion(cli, self.connection)
+        while pc.player is None:
+            pc.receive()
+        
+        servGame = ServerGame(self, cli1.socket, cli, self.connection, cli1.player1, pc.player)
+        t = Thread(target=servGame.mainGameServer)
+        t.start()
+
+        self.lstThread.append(t)
+
 
 
     def handle_lobby(self, cli):
@@ -175,7 +196,7 @@ class PlayerConnexion(Thread):
 
 
 class ServerGame:
-    def __init__(self, serveur, sock1, sock2, connection, player1, player2 ):
+    def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2):
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2
@@ -199,6 +220,9 @@ class ServerGame:
 
         self.game = Game(id_game, player1, player2)
 
+
+    def new(self, session):
+        self.serveur.new(session)
 
     def movePiece(self, start, end, color):
         if self.game.current_color() == color.name:
@@ -445,8 +469,7 @@ class Session:
                     self.send('ERR')
             case "new":
                 try:
-                    #TODO
-                    pass
+                    self.serverGame.new(self)
                 except:
                     pass
             case _:
@@ -478,221 +501,6 @@ class Session:
             return response.strip().lower()
         except Exception:
             return None
-
-
-
-    # def main_session(self):
-        """
-        Main loop for a single game session with a client.
-
-        - Alternates turns between players until the game ends.
-        - Handles move input validation, checks for illegal moves, and updates the game board.
-        - Updates player clocks and sends board and game status updates to the client.
-        - Saves moves and final game results to the database.
-        """
-        game = self.game
-
-        try:
-            while not game.get_finish():
-                player_color = game.current_color()
-                pos = 0 if player_color == "WHITE" else 1
-                player = game.get_joueur(pos)
-
-                if game.time_white <= 0 or game.time_black <= 0:
-                    self.send("Time is up! Game Over.")
-                    break
-
-                if game.is_checkmate(player_color):
-                    self.send("\n" + TEXTE_RED + "CHECKMATE" + RESET)
-                    game.set_finish()
-                    looser = game.get_joueur(pos)
-                    if pos == 0:
-                        winner = game.get_joueur(1)
-                    else:
-                        winner = game.get_joueur(0)
-                    self.send("Player" + winner.get_pseudo() + "won!")
-                    self.send("Player" + looser.get_pseudo() + "lost!")
-                    return {
-                        "result": "checkmate",
-                        "winner": winner,
-                        "looser": looser
-                    }
-
-                if game.is_stalemate(player_color):
-                    self.send("\n" + TEXTE_RED + "STALEMATE" + RESET)
-                    game.set_finish()
-                    self.send("Equality between the player" + game.get_joueur(0) +
-                              "and the player" + game.get_joueur(1))
-                    return {
-                        "result": "stalemate",
-                        "white": game.get_joueur(0),
-                        "black": game.get_joueur(1)
-                    }
-                   
-
-
-
-
-
-
-                self.send("\n==========================================")
-                self.send(
-                    f"Turn {game.get_turn()} - {player.get_pseudo()} ({player_color})"
-                )
-                self.send(f"White time: {self.format_time(game.time_white)}")
-                self.send(f"Black time: {self.format_time(game.time_black)}")
-
-                self.send(self.board.plateau_terminal())
-
-                piece_to_be_moved = ""
-                start_case_piece = None
-
-                while True:
-                    if game.king_in_danger(player_color):
-                        self.send("Your king is in check")
-                    piece_to_be_moved = self.ask_input(
-                        "Enter the starting square (example: a2)")
-
-                    if piece_to_be_moved is None:
-                        return
-                    if piece_to_be_moved == "quit":
-                        return
-
-                    if len(piece_to_be_moved) < 2 or not (
-                            piece_to_be_moved[0].isalpha() and
-                            piece_to_be_moved[1:].isdigit()):
-                        self.send("Invalid input! Format: a2")
-                        continue
-
-                    start_piece_tuple = self.board.translate(piece_to_be_moved)
-                    if not self.board.in_board(start_piece_tuple):
-                        self.send("Square outside board!")
-                        continue
-
-                    start_case_piece = self.board.get_case(start_piece_tuple)
-                    if start_case_piece.get_piece() is None:
-                        self.send("No piece here!")
-                        continue
-
-                    if start_case_piece.get_piece().get_color(
-                    ).name != player_color:
-                        self.send("Not your piece!")
-                        continue
-
-                    if not start_case_piece.get_piece().accessible_spots():
-                        self.send("Piece cannot move!")
-                        continue
-
-                    break
-
-                self.send(game.allowed_moves_graphic(piece_to_be_moved))
-
-                while True:
-                    location_input = self.ask_input(
-                        f"Enter destination for {piece_to_be_moved} (example: a4)"
-                    )
-
-                    if location_input is None:
-                        return
-                    if location_input == "quit":
-                        return
-
-                    if len(location_input) < 2:
-                        self.send("Invalid input!")
-                        continue
-
-                    end_piece_tuple = self.board.translate(location_input)
-                    if not self.board.in_board(end_piece_tuple):
-                        self.send("Square outside board!")
-                        continue
-
-                    end_case_piece = self.board.get_case(end_piece_tuple)
-
-                    save_start_case_piece = start_case_piece.get_piece()
-                    final_start = self.board.roundtrip(
-                        start_case_piece.get_pos())
-                    final_end = self.board.roundtrip(end_case_piece.get_pos())
-
-                    reussi = game.move(piece_to_be_moved, location_input)
-
-                    if game.king_in_check_after_move(start_case_piece.get_pos(),
-                                                     end_case_piece.get_pos(),
-                                                     player_color):
-                        self.send(
-                            "Move would put your king in danger! Choose another piece."
-                        )
-                        self.send(self.board.plateau_terminal())
-                        break
-
-                    if not reussi:
-                        self.send("Illegal move! Choose a green box.")
-                        continue
-
-                    game.update_clock()
-                    if game.get_time_black() == 0 or game.get_time_white() == 0:
-                        if game.get_time_black() == 0:
-                            self.send("\n" + TEXTE_RED + "player" +
-                                      game.get_joueur(1).get_pseudo() +
-                                      "time elapse" + RESET)
-                            game.set_finish()
-                            looser = game.get_joueur(1)
-                            winner = game.get_joueur(0)
-                        elif game.get_time_white() == 0:
-                            self.send("\n" + TEXTE_RED + "player" +
-                                      game.get_joueur(0).get_pseudo() +
-                                      "time elapse" + RESET)
-                            game.set_finish()
-                            looser = game.get_joueur(0)
-                            winner = game.get_joueur(1)
-
-                        self.send("Player" + winner.get_pseudo() + "won!")
-                        self.send("Player" + looser.get_pseudo() + "lost!")
-                        return {
-                            "result": "checkmate",
-                            "winner": winner,
-                            "looser": looser
-                        }
-
-                    self.send(
-                        f"> {player.get_pseudo()} moved {save_start_case_piece.get_name()} \
-                        from {final_start} to {final_end}"
-                    )
-
-                    try:
-                        queries.save_coup(self.connection, game.get_id_g(),
-                                          game.get_turn(), final_start,
-                                          final_end)
-                    except Exception:
-                        pass
-
-                    game.set_turn(game.get_turn() + 1)
-                    break
-
-            self.send("Game Over!")
-
-            try:
-                old_elo_player1 = game.get_joueur(0).get_elo()
-                old_elo_player2 = game.get_joueur(1).get_elo()
-
-                game.get_joueur(0).calculate_elo(old_elo_player2, "won")
-                game.get_joueur(1).calculate_elo(old_elo_player1, "loose")
-
-                queries.save_final_game(self.connexion, game, game.get_id_g(),
-                                        game.get_joueur(0), "won")
-                queries.save_final_game(self.connexion, game, game.get_id_g(),
-                                        game.get_joueur(1), "loose")
-            except Exception as e:
-                print(f"Error saving game results: {e}")
-
-        except Exception as e:
-            print(f"Session Error: {e}")
-        finally:
-            try:
-                self.file.close()
-                self.socket.close()
-            except Exception:
-                pass
-
 
 if __name__ == "__main__":
     connexion = db.open_connexion()
