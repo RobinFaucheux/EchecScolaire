@@ -80,7 +80,12 @@ class Client:
                         case _:
                             print("Veuillez entrer un nom/mdp correct")
                 print("Connexion effectuee avec succes")
-                print("Attente de l'autre joueur")
+                choice = input("Que voulez vous faire ? (1 : Voir son historique / 2 : Rechercher une partie) : ").lower()
+                while choice != "1" and choice != "2":
+                    if choice == "2":    
+                        print("Attente d'un autre joueur")
+                    else:
+                        self.send(f'list_games')
                 
             except:
                 print("Veuillez entrer des valeurs correctes")

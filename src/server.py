@@ -208,6 +208,36 @@ class ServerGame:
         if len(self.replay_count == 2):
             self = ServerGame(self.serveur, self.socket1, self.socket2, self.connexion)
 
+    
+    def get_historical(self, color):
+        if color == Color.WHITE:
+            player = self.game.get_joueur(0)
+        else:
+            player = self.game.get_joueur(1)
+        
+        id = player.get_id()
+
+        player = queries.collect_player(self.connexion, id)
+        player_obj = None
+        if player:
+            player_obj = Player(player[0], player[1], player[3])
+            player_obj.set_historical(
+                queries.collect_historic_game_of_player(connexion, player_obj))
+            
+            historicals = player_obj.get_historical()
+            if historicals != []:
+                game_strings = []
+                for game in player_obj.get_historical():
+                    line = f"{game['id_game']}|{game['pseudo_joueur']}|{game['result']}"
+                    game_strings.append(line)
+
+                return "OK " + ";".join(game_strings)
+            else:
+                return "OK Aucune partie enregistrée"
+        
+        return "ERR"
+
+
     def next(self):
         if self.current_color == Color.WHITE:
             self.current_player = self.sess2
@@ -434,6 +464,12 @@ class Session:
                     pass
                 except:
                     pass
+            case "list_games":
+                try:
+                    historique_txt = self.serverGame.get_historical(self.color)
+                    self.send(historique_txt)
+                except:
+                    self.send('ERR')
             case _:
                 self.send('ERR')
 
