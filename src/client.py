@@ -163,7 +163,7 @@ class Client:
         except Exception:
             pass
     
-    def finish_game(self, win):
+    def finish_game(self, win, rematch):
         if win == "win":
             print('Victoire')
         elif win == "loose":
@@ -171,7 +171,8 @@ class Client:
         else:
             print('Egalite')
         self.game = None
-        self.demander_rematch()
+        if rematch:
+            self.demander_rematch()
 
     def exit(self):
         self.quit = True
@@ -194,19 +195,19 @@ class Client:
                     print("ERR")
             case "win":
                 try:
-                    self.finish_game('win')
+                    self.finish_game('win', True)
                     return
                 except:
                     print("ERR")
             case "loose":
                 try:
-                    self.finish_game('loose')
+                    self.finish_game('loose', True)
                     return
                 except:
                     print("ERR")
             case "draw":
                 try:
-                    self.finish_game('draw')
+                    self.finish_game('draw', True)
                     return
                 except:
                     print('ERR')
@@ -242,6 +243,12 @@ class Client:
     def send_rematch(self):
         print("En attente de l'autre joueur")
         self.send("replay")
+
+    def send_ask_to_do_after_game(self):
+        print("" \
+        "1. Relancer une nouvelle partie \n"
+        "2. Revenir au menu principal\n"
+        "3. Se déconnecter")
 
     def demander_rematch(self):
         rep = ""
@@ -329,9 +336,13 @@ class Client:
             command = input().strip().lower()
 
             if command == "quit":
-                self.send("leave")
-                self.finish_game()
+                self.send("leave") 
                 self.send("quit")
+                while True:
+                    line = self.file.readline().strip()
+                    if line == "OK" or not line:
+                        break
+                self.finish_game("loose", False)
                 self.exit()
                 break
 

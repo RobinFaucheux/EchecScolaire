@@ -464,12 +464,17 @@ class Session:
         self.send("exit")
 
     def receive(self):
-        line = self.file.readline()
+        try:
+            line = self.file.readline()
+        except ConnectionResetError:
+            line = ""
+            
         if not line:
-            print(f"Joueur {self.color} déconnecté")
-            self.serverGame.abandon(self.color)
-            self.opened = False
+            self.server.remove_player_thread(self)
+            self.connected = False
+            self.ready = True
             return
+            
         rep = line.strip().split(' ')
         response = rep[0]
         args = rep[1:]
@@ -493,8 +498,6 @@ class Session:
                     return
             case "quit":
                 try :
-                    if self.serverGame.game is not None:
-                        self.serverGame.abandon(self.color)
                     self.send('OK')
                     self.disconnect()
                 except:
