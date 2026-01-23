@@ -56,7 +56,6 @@ class Client:
                 mdp = input("mot de passe : ")
                 self.send(f'connect {name} {mdp}')
                 rep = self.file.readline().strip()
-                print(rep)
                 if rep == "OK":
                     player_co = True
             case "2":
@@ -64,7 +63,6 @@ class Client:
                 mdp = input("mot de passe : ")
                 self.send(f'register {name} {mdp}')
                 rep = self.file.readline().strip()
-                print(rep)
                 if rep == "OK":
                     player_co = True
             case _:
@@ -188,7 +186,6 @@ class Client:
                     start = args[0]
                     end = args[1]
                     self.game.move(start, end)
-
                 except:
                     print("ERR")
             case "win":
@@ -343,7 +340,7 @@ class Client:
                 print("Vous êtes en echec")
 
             if len(command) < 2:
-                print("c")
+                print("Rentrez une lettre suivie d'un chiffre")
                 continue
 
             if not (command[0].isalpha() and command[1:].isdigit()):

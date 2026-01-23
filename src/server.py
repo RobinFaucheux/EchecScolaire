@@ -44,27 +44,25 @@ class Serveur:
         try:
             sock.bind(("0.0.0.0", port))
             sock.listen(1)
-            print(f"Server listening on port {port}...")
+            print(f"Serveur en écoute sur le port {port}...")
         except Exception as e:
-            print(f"Error binding server: {e}")
+            print(f"Erreur lors de la liaison au serveur : {e}")
             return
         
         try:
             while True:
                 cli, addr = sock.accept()
-                print(f"New connection from {addr}")
                 t = Thread(target=self.handle_lobby, args=(cli,))
                 t.start()
-
                             
         except KeyboardInterrupt:
-            print("Server interrupted by user.")
+            print("Le serveur a été interrompu par un utilisateur")
         except Exception as e:
-            print(f"Server Error: {e}")
+            print(f"Erreur serveur: {e}")
         finally:
             try:
                 self.sock.close()
-                print("Server socket closed. Exiting.")
+                print("Connexion serveur fermée. Arrêt")
             except Exception:
                 pass
             sys.exit()
@@ -72,15 +70,17 @@ class Serveur:
     def new(self, cli1):
         fake_pc = PlayerConnexion(cli1.socket, self.connection, self)
         self.matchmaking_queue.append((cli1.socket, fake_pc))
-        print(f"Joueur {fake_pc.player.get_pseudo()} en attente")
+        print(f"Joueur {fake_pc.player.get_pseudo()} en attente d'une partie")
 
     def handle_lobby(self, cli):
         pc = PlayerConnexion(cli, self.connection, self)
         self.lst_thread_players.append(pc)
         while not pc.ready:
             pc.receive()
+        if not pc.connected:
+            return
         self.matchmaking_queue.append((cli, pc))
-        print(f"Joueur {pc.player.get_pseudo()} en attente")
+        print(f"Joueur {pc.player.get_pseudo()} en attente d'une partie")
         if len(self.matchmaking_queue) >= 2:
             p1_cli, p1_pc = self.matchmaking_queue.pop(0)
             p2_cli, p2_pc = self.matchmaking_queue.pop(0)
@@ -88,11 +88,10 @@ class Serveur:
             t = Thread(target=servGame.mainGameServer)
             t.start()
 
-    def remove_player_thread(self, player_thread):
-        if player_thread in self.lst_thread_players:
-            self.lst_thread_players.remove(player_thread)
-            print(f"Thread supprimé. Joueurs restants : {len(self.lst_thread_players)}")
-
+    def remove_player_thread(self, player):
+        if player in self.lst_thread_players: 
+            print(f"Joueur {player.player.get_pseudo()} déconnecté")
+            self.lst_thread_players.remove(player)
 
 
 class PlayerConnexion(Thread):
@@ -103,6 +102,7 @@ class PlayerConnexion(Thread):
         self.player = None
         self.connection = connection
         self.ready = False
+        self.connected = True
 
     
     def send(self, message):
@@ -125,6 +125,7 @@ class PlayerConnexion(Thread):
             password = row[2]
             if password == passwd:
                 self.player = Player(row[0], row[1], row[3], [])
+                print(f"Joueur {self.player.get_pseudo()} connecté")
                 self.send('OK')
             else:
                 self.send("ERR")
@@ -158,20 +159,25 @@ class PlayerConnexion(Thread):
     def get_list_players(self):
         list_players = []
         for player in self.server.lst_thread_players:
-            list_players.append(player.player.get_pseudo())
+            if player.player is not None:
+                list_players.append(player.player.get_pseudo())
         json_data = json.dumps(list_players)
         return json_data
 
 
     def receive(self):
-        line = self.file.readline()
+        try:
+            line = self.file.readline()
+        except ConnectionResetError:
+            line = ""
+            
         if not line:
-            print(f"Déconnexion détectée pour un joueur.")
             self.server.remove_player_thread(self)
+            self.connected = False
             self.ready = True
             return
             
-        rep = self.file.readline().strip().split(' ')
+        rep = line.strip().split(' ')
         response = rep[0]
         args = rep[1:]
 
@@ -219,22 +225,16 @@ class ServerGame:
         self.socket2 = sock2
         self.connection = connection
         self.piece_played = False
-        self.replay_count = []
-
-        
+        self.replay_count = [] 
         try:
             id_game = queries.save_game(self.connection)
         except Exception:
             id_game = 1
 
         self.sess1 = Session(self.serveur, self.socket1, self.connection, id_game, player1, player2, Color.WHITE, self)
-        self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
-
-
-
+        self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self)
         self.current_player = self.sess1
         self.current_color = Color.WHITE
-
         self.game = Game(id_game, player1, player2)
 
 
@@ -256,7 +256,6 @@ class ServerGame:
             except Exception:
                 pass
 
-    
 
     def abandon(self, color):
         self.game.set_finish()
@@ -269,7 +268,6 @@ class ServerGame:
             self.sess1.win()
             self.sess2.loose()
             self.end_game('won', 'loose')
-
 
 
     def replay(self, color):
@@ -307,7 +305,6 @@ class ServerGame:
             self.current_color = Color.WHITE
 
 
-
     def end_game(self, status_player_1 : str, status_player_2 : str):
         try:
             old_elo_player1 = self.game.get_joueur(0).get_elo()
@@ -321,7 +318,7 @@ class ServerGame:
             queries.save_final_game(self.connection, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(1), status_player_2)
         except Exception as e:
-            print(f"Error saving game results: {e}")
+            print(f"Erreur lors de la sauvegarde des résultats de jeu: {e}")
 
 
     def next_turn(self):
@@ -334,7 +331,6 @@ class ServerGame:
             if self.current_color == Color.BLACK:
                 self.sess2.loose()
                 self.sess1.win()
-                print("cbuyher")
                 self.end_game("won", "loose")
             else:
                 self.sess2.win()
@@ -462,7 +458,7 @@ class Session:
     def receive(self):
         line = self.file.readline()
         if not line:
-            print(f"Client {self.color} déconnecté (lecture vide).")
+            print(f"Joueur {self.color} déconnecté")
             self.serverGame.abandon(self.color)
             self.opened = False
             return
@@ -538,9 +534,9 @@ class Session:
 if __name__ == "__main__":
     connection = db.open_connexion()
     if not db.database_already_initialized(connection):
-        print("Initializing database...")
+        print("Initialisation de la base de données...")
         db.create_database(connection)
     else:
-        print("Database ready.")
+        print("Base de données prête")
 
     Serveur(connection).main_server(5555)
