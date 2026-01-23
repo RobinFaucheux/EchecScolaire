@@ -177,6 +177,7 @@ class PlayerConnexion(Thread):
             case "new":
                 try:
                     self.ready = True
+                    self.send('ERR')
                 except:
                     self.send('ERR')
 
