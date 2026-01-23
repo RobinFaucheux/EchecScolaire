@@ -177,7 +177,7 @@ class PlayerConnexion(Thread):
             case "new":
                 try:
                     self.ready = True
-                    self.send('ERR')
+                    self.send('OK')
                 except:
                     self.send('ERR')
 
@@ -262,7 +262,7 @@ class ServerGame:
                 new_id = self.game.get_id_g() + 1
 
             self.game = Game(new_id, p1, p2)
-            self.game.set_turn(0)
+            self.game.set_turn(1)
             self.replay_count = []
             self.current_player = self.sess1
             self.current_color = Color.WHITE
