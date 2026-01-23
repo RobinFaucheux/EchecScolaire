@@ -9,6 +9,7 @@ import db.init_db as db
 from db import queries
 from colorama import init
 from threading import Thread
+import select
 
 init()
 
@@ -91,7 +92,7 @@ class Serveur:
         while not pc.ready:
             pc.receive()
         self.matchmaking_queue.append((cli, pc))
-        print(f"Joueur {pc.player.get_pseudo()} en attente.")
+        print(f"Joueur {pc.player.get_pseudo()} en attente")
         if len(self.matchmaking_queue) >= 2:
             p1_cli, p1_pc = self.matchmaking_queue.pop(0)
             p2_cli, p2_pc = self.matchmaking_queue.pop(0)
@@ -256,44 +257,30 @@ class ServerGame:
 
 
     def replay(self, color):
-        try:
-            print(f"Demande de replay reçue de {color}")
-            if color not in self.replay_count:
-                self.replay_count.append(color)
+        print(f"Demande de replay reçue de {color}")
+        if color not in self.replay_count:
+            self.replay_count.append(color)
 
-            if self.current_player == self.sess1:
+        if color == Color.WHITE:
                 self.current_player = self.sess2
-            else:
+        else:
                 self.current_player = self.sess1
-            
-            if len(self.replay_count) == 2:
-                print("DEBUG: Les deux joueurs sont prêts. Reset de la partie...")
-                p1 = self.game.get_joueur(0)
-                p2 = self.game.get_joueur(1)
-                
-                try:
-                    new_id = queries.save_game(self.connection)
-                except:
-                    new_id = self.game.get_id_g() + 1
+        
+        if len(self.replay_count) == 2:
+            p1 = self.game.get_joueur(0)
+            p2 = self.game.get_joueur(1)
+            try:
+                new_id = queries.save_game(self.connection)
+            except:
+                new_id = self.game.get_id_g() + 1
 
-                # On crée le jeu avec cet ID valide
-                self.game = Game(new_id, p1, p2)
-                self.game.set_turn(0)
-
-                # Vérifie bien que p1_pc et p2_pc existent ou utilise sess1/sess2
-                self.replay_count = []
-                
-                # Reset de l'état pour le thread mainGameServer
-                self.current_player = self.sess1
-                self.current_color = Color.WHITE
-
-                self.sess1.start('w')
-                self.sess2.start('b')
-                print("DEBUG: Messages START envoyés.")
-        except Exception as e:
-            print(f"CRASH dans ServerGame.replay : {e}")
-            import traceback
-            traceback.print_exc()
+            self.game = Game(new_id, p1, p2)
+            self.game.set_turn(0)
+            self.replay_count = []
+            self.current_player = self.sess1
+            self.current_color = Color.WHITE
+            self.sess1.start('w')
+            self.sess2.start('b')
 
 
     def next(self):
@@ -339,18 +326,15 @@ class ServerGame:
                 self.sess1.loose()
                 self.end_game("loose", "won")
                 
-
         if self.game.is_stalemate(self.current_color.name):
             self.game.set_finish()
             self.sess1.draw()
             self.sess2.draw()
             self.end_game("equality", "equality")
-        
+    
         self.game.update_clock()
-        
-        
-
         self.game.set_turn(self.game.get_turn() + 1)
+
 
     def set_player(self, color : Color, player : Player):
         if color == Color.BLACK:
@@ -363,18 +347,12 @@ class ServerGame:
         self.sess1.start('w')
         self.sess2.start('b')
         while self.sess1.opened and self.sess2.opened:
-            print(f"DEBUG: Le serveur attend une action de : {self.current_color} (Session {self.current_player.color})")
             self.current_player.receive()
             if not self.game.get_finish():
                 if self.piece_played:
                     self.next_turn()
                     self.piece_played = False
-                else:
-                    # Debug pour confirmer qu'on attend le premier coup
-                    print("DEBUG: Attente du premier coup des Blancs...")
-            
-        
-        
+
 
 class Session:
     """
@@ -393,17 +371,12 @@ class Session:
         self.server = serveur
         self.socket = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
-
         player1 = player
         player2 = adversary
-
         self.serverGame = serverGame
-
         self.game = Game(id_game, player1, player2)
         self.board = self.game.get_board()
-
         self.opened = True
-
         self.color = color
 
 
@@ -496,11 +469,7 @@ class Session:
                 try :
                     self.serverGame.abandon(self.color)
                     return
-                except Exception as e:
-                    print(f"CRASH LEAVE : {e}") 
-                    import traceback
-                    traceback.print_exc()
-                    
+                except:
                     self.send('ERR')
                     return
             case "quit":
@@ -514,10 +483,7 @@ class Session:
                 try:
                     self.serverGame.replay(self.color)
                     return
-                except Exception as e:
-                    print(f"DEBUG - Erreur Replay : {e}")
-                    import traceback
-                    traceback.print_exc()
+                except:
                     self.send('ERR')
             case "new":
                 try:

@@ -218,7 +218,6 @@ class Client:
                     else:
                         self.color = Color.BLACK
                     self.game = Game(0, None, None)
-                    #self.main_client()
                 except:
                     print("ERR")
             case 'list_games':
@@ -233,7 +232,7 @@ class Client:
         self.send(f"play {start} {end}")
 
     def send_rematch(self):
-        print("test envoie")
+        print("En attente de l'autre joueur")
         self.send("replay")
 
     def demander_rematch(self):
