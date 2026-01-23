@@ -208,13 +208,21 @@ class PlayerConnexion(Thread):
                 except:
                     self.send('ERR')
 
-
             case "new":
                 try:
                     self.ready = True
                     self.send('OK')
                 except:
                     self.send('ERR')
+            
+            case "quit":
+                try:
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+                
+            case _:
+                self.send('ERR')
 
 
 
@@ -485,7 +493,8 @@ class Session:
                     return
             case "quit":
                 try :
-                    self.serverGame.abandon(self.color)
+                    if self.serverGame.game is not None:
+                        self.serverGame.abandon(self.color)
                     self.send('OK')
                     self.disconnect()
                 except:

@@ -14,12 +14,14 @@ class Client:
         self.HOST = host
         self.port = port
         self.sock = socket.socket()
-        self.start()
         self.file = None
-        self.lobby()
+        self.quit = False
         self.game = None
-        self.receive()
-        self.main_client()
+        self.start()
+        self.lobby()
+        if not self.quit:
+            self.receive()
+            self.main_client()
 
     def start(self):
         print(
@@ -73,8 +75,8 @@ class Client:
         ready = False
         print("" \
         "1. Voir son historique \n"
-        "2. Chercher une game \n"
-        "3. Voir la liste des joueurs\n"
+        "2. Voir la liste des joueurs\n"
+        "3. Chercher une game \n"
         "4. Se déconnecter")
         commande = input().strip()
         match commande:
@@ -82,17 +84,20 @@ class Client:
                 self.send("list_games")
                 self.receive()
             case "2":
+                self.send("players")
+                self.receive()
+            case "3":
                 self.send("new")  
                 rep = self.file.readline().strip()
                 if rep == "OK":
                     ready = True
                     print("En attente de joueurs")
-            case "3":
-                self.send("players")
-                self.receive()
             case "4":
-                # self.send("quit") TODO
-                # self.exit()
+                self.send("quit")
+                rep = self.file.readline().strip()
+                if rep == "OK":
+                    self.exit()
+                    return True
                 pass
             case _:
                 print('Veuillez entrer  une commande correctes')
@@ -167,13 +172,12 @@ class Client:
             print('Egalite')
         self.game = None
         self.demander_rematch()
-        
 
     def exit(self):
+        self.quit = True
         self.file.close()
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
-        self.quit = True
     
     def receive(self):
         rep = self.file.readline().strip().split(' ')
