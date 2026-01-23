@@ -76,7 +76,8 @@ class Client:
         print("" \
         "1. Voir son historique \n"
         "2. Chercher une game \n"
-        "3. Se déconnecter")
+        "3. Voir la liste des joueurs\n"
+        "4. Se déconnecter")
         commande = input().strip()
         match commande:
             case "1":
@@ -89,6 +90,9 @@ class Client:
                     ready = True
                     print("En attente de joueurs")
             case "3":
+                self.send("players")
+                self.receive()
+            case "4":
                 # self.send("quit") TODO
                 # self.exit()
                 pass
@@ -223,6 +227,9 @@ class Client:
             case 'list_games':
                 json_str = " ".join(args)
                 self.get_historicals(json_str)
+            case 'players':
+                json_str = " ".join(args)
+                self.get_players(json_str)
             case 'OK':
                 print("Succes")
             case 'ERR':
@@ -256,6 +263,14 @@ class Client:
             resultat = game.get("result", "En cours")
             print(f"adversaire : {adversaire} | {resultat}")  
         print("-" * 22)
+
+    def get_players(self, json_str):
+        players = json.loads(json_str)
+        if not players:
+            print("Aucun joueur disponible")
+            return
+        chaine = "Liste des joueurs connectés : " + " / ".join(players)
+        print(chaine)
 
 
     def ask_end_piece(self, start):

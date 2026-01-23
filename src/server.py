@@ -27,7 +27,7 @@ class Serveur:
         self.connection = connection
         self.matchmaking_queue = []
         self.sock = None
-        self.lstThread = []
+        self.lst_thread_players = []
 
 
     def main_server(self, port):
@@ -70,12 +70,13 @@ class Serveur:
             sys.exit()
     
     def new(self, cli1):
-        fake_pc = PlayerConnexion(cli1.socket, self.connection)
+        fake_pc = PlayerConnexion(cli1.socket, self.connection, self)
         self.matchmaking_queue.append((cli1.socket, fake_pc))
         print(f"Joueur {fake_pc.player.get_pseudo()} en attente")
 
     def handle_lobby(self, cli):
-        pc = PlayerConnexion(cli, self.connection)
+        pc = PlayerConnexion(cli, self.connection, self)
+        self.lst_thread_players.append(pc)
         while not pc.ready:
             pc.receive()
         self.matchmaking_queue.append((cli, pc))
@@ -87,10 +88,16 @@ class Serveur:
             t = Thread(target=servGame.mainGameServer)
             t.start()
 
+    def remove_player_thread(self, player_thread):
+        if player_thread in self.lst_thread_players:
+            self.lst_thread_players.remove(player_thread)
+            print(f"Thread supprimé. Joueurs restants : {len(self.lst_thread_players)}")
+
 
 
 class PlayerConnexion(Thread):
-    def __init__(self, sock, connection):
+    def __init__(self, sock, connection, server):
+        self.server = server
         self.sock = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
         self.player = None
@@ -146,9 +153,24 @@ class PlayerConnexion(Thread):
             json_data = json.dumps(historicals)
             return "list_games " + json_data
         return "ERR"
-    
+
+
+    def get_list_players(self):
+        list_players = []
+        for player in self.server.lst_thread_players:
+            list_players.append(player.player.get_pseudo())
+        json_data = json.dumps(list_players)
+        return json_data
+
 
     def receive(self):
+        line = self.file.readline()
+        if not line:
+            print(f"Déconnexion détectée pour un joueur.")
+            self.server.remove_player_thread(self)
+            self.ready = True
+            return
+            
         rep = self.file.readline().strip().split(' ')
         response = rep[0]
         args = rep[1:]
@@ -173,6 +195,13 @@ class PlayerConnexion(Thread):
                         self.send("ERR")
                 except:
                     self.send('ERR')
+
+            case "players":
+                try:
+                    self.send("players " + self.get_list_players())
+                except:
+                    self.send('ERR')
+
 
             case "new":
                 try:
