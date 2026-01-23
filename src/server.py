@@ -70,22 +70,9 @@ class Serveur:
             sys.exit()
     
     def new(self, cli1):
-        print("Waiting for player...")
-        cli, addr = self.sock.accept()
-        print(f"New connection from {addr}")
-
-        print(f"Waiting for player log in")
-        pc = PlayerConnexion(cli, self.connection)
-        while pc.player is None:
-            pc.receive()
-        
-        servGame = ServerGame(self, cli1.socket, cli, self.connection, cli1.player1, pc.player)
-        t = Thread(target=servGame.mainGameServer)
-        t.start()
-
-        self.lstThread.append(t)
-
-
+        fake_pc = PlayerConnexion(cli1.socket, self.connection)
+        self.matchmaking_queue.append((cli1.socket, fake_pc))
+        print(f"Joueur {fake_pc.player.get_pseudo()} en attente")
 
     def handle_lobby(self, cli):
         pc = PlayerConnexion(cli, self.connection)
@@ -190,7 +177,6 @@ class PlayerConnexion(Thread):
             case "new":
                 try:
                     self.ready = True
-                    self.send('OK')
                 except:
                     self.send('ERR')
 
@@ -279,8 +265,7 @@ class ServerGame:
             self.replay_count = []
             self.current_player = self.sess1
             self.current_color = Color.WHITE
-            self.sess1.start('w')
-            self.sess2.start('b')
+            self.mainGameServer()
 
 
     def next(self):
