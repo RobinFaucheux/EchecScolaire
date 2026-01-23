@@ -19,6 +19,7 @@ class Client:
         self.lobby()
         self.game = None
         self.receive()
+        self.main_client()
 
     def start(self):
         print(
@@ -162,6 +163,7 @@ class Client:
             print('Defaite')
         else:
             print('Egalite')
+        self.game = None
         self.demander_rematch()
         
 
@@ -188,16 +190,19 @@ class Client:
             case "win":
                 try:
                     self.finish_game('win')
+                    return
                 except:
                     print("ERR")
             case "loose":
                 try:
                     self.finish_game('loose')
+                    return
                 except:
                     print("ERR")
             case "draw":
                 try:
                     self.finish_game('draw')
+                    return
                 except:
                     print('ERR')
             case 'exit':
@@ -213,7 +218,7 @@ class Client:
                     else:
                         self.color = Color.BLACK
                     self.game = Game(0, None, None)
-                    self.main_client()
+                    #self.main_client()
                 except:
                     print("ERR")
             case 'list_games':
@@ -228,11 +233,13 @@ class Client:
         self.send(f"play {start} {end}")
 
     def send_rematch(self):
+        print("test envoie")
         self.send("replay")
 
     def demander_rematch(self):
-        print("Remarch ? (y/n)")
-        rep = input()
+        rep = ""
+        while rep not in ["y", "n"]:
+            rep = input("Remarch ? (y/n)")
         if rep.upper() == 'Y':
             self.send_rematch()
 
@@ -315,7 +322,7 @@ class Client:
 
             if command == "leave":
                 self.send('leave')
-                self.finish_game()
+                self.receive()
                 break
 
             if self.game.king_in_danger(self.game.current_color()):
@@ -356,16 +363,26 @@ class Client:
         self.game.get_board().plateau_terminal()
         if self.game.current_color() == self.color.name:
             self.play()
+            if self.game is None:
+                return
             self.receive()
         else:
             self.receive()
+        if self.game is None:
+            return
         self.game.set_turn(self.game.get_turn() + 1)
 
 
     def main_client(self):
         self.quit = False
+        self.quit = False
         while not self.quit:
-            self.next_turn()
+            if self.game is None:
+                self.receive() 
+                if self.game is None:
+                    break
+            else:
+                self.next_turn()
 
 
 if __name__ == "__main__":

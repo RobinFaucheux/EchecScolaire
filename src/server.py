@@ -102,11 +102,11 @@ class Serveur:
 
 
 class PlayerConnexion(Thread):
-    def __init__(self, sock, connexion):
+    def __init__(self, sock, connection):
         self.sock = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
         self.player = None
-        self.connexion = connexion
+        self.connection = connection
         self.ready = False
 
     
@@ -125,7 +125,7 @@ class PlayerConnexion(Thread):
 
 
     def connect(self, name, passwd):
-        row = queries.connect_player(self.connexion, name)
+        row = queries.connect_player(self.connection, name)
         if row is not None:
             password = row[2]
             if password == passwd:
@@ -138,9 +138,9 @@ class PlayerConnexion(Thread):
 
 
     def register(self, name, passwd):
-        id = queries.register_player(self.connexion, name, passwd)
+        id = queries.register_player(self.connection, name, passwd)
         if id is not None:
-            row = queries.collect_player(self.connexion, id)
+            row = queries.collect_player(self.connection, id)
             self.player = Player(row[0], row[1], row[3], [])
             self.send('OK')
         else:
@@ -149,11 +149,11 @@ class PlayerConnexion(Thread):
 
     def get_historical(self, player: Player):
         id = player.get_id()
-        player = queries.collect_player(self.connexion, id)
+        player = queries.collect_player(self.connection, id)
         player_obj = None
         if player:
             player_obj = Player(player[0], player[1], player[3])
-            player_obj.set_historical(queries.collect_historic_game_of_player(self.connexion, player_obj))   
+            player_obj.set_historical(queries.collect_historic_game_of_player(self.connection, player_obj))   
             historicals = player_obj.get_historical()
             json_data = json.dumps(historicals)
             return "list_games " + json_data
@@ -200,18 +200,18 @@ class ServerGame:
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2
-        self.connexion = connection
-
+        self.connection = connection
+        self.piece_played = False
         self.replay_count = []
 
         
         try:
-            id_game = queries.save_game(self.connexion)
+            id_game = queries.save_game(self.connection)
         except Exception:
             id_game = 1
 
-        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE, self)
-        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
+        self.sess1 = Session(self.serveur, self.socket1, self.connection, id_game, player1, player2, Color.WHITE, self)
+        self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
 
 
 
@@ -226,21 +226,23 @@ class ServerGame:
 
     def movePiece(self, start, end, color):
         if self.game.current_color() == color.name:
-            self.game.move(start, end)
-            if color == Color.WHITE:
-                self.sess2.send_adversary_move(start, end)
-            else:
-                self.sess1.send_adversary_move(start, end)
-        try:
-            queries.save_coup(self.connection, self.game.get_id_g(),
-                                self.game.get_turn(), start,
-                                end)
-        except Exception:
-            pass
+            if self.game.move(start, end):
+                if color == Color.WHITE:
+                    self.sess2.send_adversary_move(start, end)
+                else:
+                    self.sess1.send_adversary_move(start, end)
+                self.piece_played = True
+            try:
+                queries.save_coup(self.connection, self.game.get_id_g(),
+                                    self.game.get_turn(), start,
+                                    end)
+            except Exception:
+                pass
 
     
 
     def abandon(self, color):
+        self.game.set_finish()
         if color == Color.WHITE:
             self.sess2.win()
             self.sess1.loose()
@@ -254,11 +256,44 @@ class ServerGame:
 
 
     def replay(self, color):
-        if color not in self.replay_count:
-            self.replay_count.append(self.color)
-        
-        if len(self.replay_count == 2):
-            self = ServerGame(self.serveur, self.socket1, self.socket2, self.connexion)
+        try:
+            print(f"Demande de replay reçue de {color}")
+            if color not in self.replay_count:
+                self.replay_count.append(color)
+
+            if self.current_player == self.sess1:
+                self.current_player = self.sess2
+            else:
+                self.current_player = self.sess1
+            
+            if len(self.replay_count) == 2:
+                print("DEBUG: Les deux joueurs sont prêts. Reset de la partie...")
+                p1 = self.game.get_joueur(0)
+                p2 = self.game.get_joueur(1)
+                
+                try:
+                    new_id = queries.save_game(self.connection)
+                except:
+                    new_id = self.game.get_id_g() + 1
+
+                # On crée le jeu avec cet ID valide
+                self.game = Game(new_id, p1, p2)
+                self.game.set_turn(0)
+
+                # Vérifie bien que p1_pc et p2_pc existent ou utilise sess1/sess2
+                self.replay_count = []
+                
+                # Reset de l'état pour le thread mainGameServer
+                self.current_player = self.sess1
+                self.current_color = Color.WHITE
+
+                self.sess1.start('w')
+                self.sess2.start('b')
+                print("DEBUG: Messages START envoyés.")
+        except Exception as e:
+            print(f"CRASH dans ServerGame.replay : {e}")
+            import traceback
+            traceback.print_exc()
 
 
     def next(self):
@@ -279,9 +314,9 @@ class ServerGame:
             self.game.get_joueur(0).calculate_elo(old_elo_player2, status_player_1)
             self.game.get_joueur(1).calculate_elo(old_elo_player1, status_player_2)
 
-            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
+            queries.save_final_game(self.connection, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(0), status_player_1)
-            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
+            queries.save_final_game(self.connection, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(1), status_player_2)
         except Exception as e:
             print(f"Error saving game results: {e}")
@@ -297,6 +332,7 @@ class ServerGame:
             if self.current_color == Color.BLACK:
                 self.sess2.loose()
                 self.sess1.win()
+                print("cbuyher")
                 self.end_game("won", "loose")
             else:
                 self.sess2.win()
@@ -327,8 +363,15 @@ class ServerGame:
         self.sess1.start('w')
         self.sess2.start('b')
         while self.sess1.opened and self.sess2.opened:
+            print(f"DEBUG: Le serveur attend une action de : {self.current_color} (Session {self.current_player.color})")
             self.current_player.receive()
-            self.next_turn()
+            if not self.game.get_finish():
+                if self.piece_played:
+                    self.next_turn()
+                    self.piece_played = False
+                else:
+                    # Debug pour confirmer qu'on attend le premier coup
+                    print("DEBUG: Attente du premier coup des Blancs...")
             
         
         
@@ -355,11 +398,6 @@ class Session:
         player2 = adversary
 
         self.serverGame = serverGame
-
-        try:
-            id_game = queries.save_game(self.connexion)
-        except Exception:
-            id_game = 1
 
         self.game = Game(id_game, player1, player2)
         self.board = self.game.get_board()
@@ -434,7 +472,13 @@ class Session:
         self.send("exit")
 
     def receive(self):
-        rep = self.file.readline().strip().split(' ')
+        line = self.file.readline()
+        if not line:
+            print(f"Client {self.color} déconnecté (lecture vide).")
+            self.serverGame.abandon(self.color)
+            self.opened = False
+            return
+        rep = line.strip().split(' ')
         response = rep[0]
         args = rep[1:]
         print(rep)
@@ -451,9 +495,14 @@ class Session:
             case "leave":
                 try :
                     self.serverGame.abandon(self.color)
-                    self.send('OK')
-                except:
+                    return
+                except Exception as e:
+                    print(f"CRASH LEAVE : {e}") 
+                    import traceback
+                    traceback.print_exc()
+                    
                     self.send('ERR')
+                    return
             case "quit":
                 try :
                     self.serverGame.abandon(self.color)
@@ -464,8 +513,11 @@ class Session:
             case "replay":
                 try:
                     self.serverGame.replay(self.color)
-                    self.send('OK')
-                except:
+                    return
+                except Exception as e:
+                    print(f"DEBUG - Erreur Replay : {e}")
+                    import traceback
+                    traceback.print_exc()
                     self.send('ERR')
             case "new":
                 try:
@@ -503,11 +555,11 @@ class Session:
             return None
 
 if __name__ == "__main__":
-    connexion = db.open_connexion()
-    if not db.database_already_initialized(connexion):
+    connection = db.open_connexion()
+    if not db.database_already_initialized(connection):
         print("Initializing database...")
-        db.create_database(connexion)
+        db.create_database(connection)
     else:
         print("Database ready.")
 
-    Serveur(connexion).main_server(5555)
+    Serveur(connection).main_server(5555)
