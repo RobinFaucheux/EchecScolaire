@@ -1,17 +1,6 @@
 import sqlalchemy
 from sqlalchemy import inspect, text
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_DRIVER = os.getenv("DB_DRIVER")
-
-TABLES =  ['PLAYER', 'PLAY', 'GAME', 'COUP']
+from model.constant import DB_USER, DB_PASS, DB_HOST, DB_NAME, DB_DRIVER, TABLES
 
 def open_connexion():
     """
@@ -43,6 +32,7 @@ def database_already_initialized(connexion: sqlalchemy.Connection) -> bool:
     """
     inspector = inspect(connexion)
     tables = inspector.get_table_names()
+    tables = [table.upper() for table in tables]
     for tab in TABLES:
         if not tab in tables:
             return False
