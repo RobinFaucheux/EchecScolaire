@@ -11,6 +11,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
 DB_DRIVER = os.getenv("DB_DRIVER")
 
+TABLES =  ['PLAYER', 'PLAY', 'GAME', 'COUP']
 
 def open_connexion():
     """
@@ -42,7 +43,10 @@ def database_already_initialized(connexion: sqlalchemy.Connection) -> bool:
     """
     inspector = inspect(connexion)
     tables = inspector.get_table_names()
-    return len(tables) != 0
+    for tab in TABLES:
+        if not tab in tables:
+            return False
+    return True
 
 
 def create_database(connexion: sqlalchemy.Connection) -> None:
