@@ -9,7 +9,7 @@ import db.init_db as db
 from db import queries
 from colorama import init
 from threading import Thread
-import select
+import threading
 
 init()
 
@@ -28,7 +28,7 @@ class Serveur:
         self.matchmaking_queue = []
         self.sock = None
         self.lst_thread_players = []
-
+        self.verrou = threading.Lock()
 
     def main_server(self, port):
         """
@@ -69,29 +69,35 @@ class Serveur:
     
     def new(self, cli1):
         fake_pc = PlayerConnexion(cli1.socket, self.connection, self)
-        self.matchmaking_queue.append((cli1.socket, fake_pc))
+        with self.verrou:
+            self.matchmaking_queue.append((cli1.socket, fake_pc))
         print(f"Joueur {fake_pc.player.get_pseudo()} en attente d'une partie")
 
     def handle_lobby(self, cli):
         pc = PlayerConnexion(cli, self.connection, self)
-        self.lst_thread_players.append(pc)
+        with self.verrou:
+            self.lst_thread_players.append(pc)
         while not pc.ready:
             pc.receive()
         if not pc.connected:
             return
         self.matchmaking_queue.append((cli, pc))
         print(f"Joueur {pc.player.get_pseudo()} en attente d'une partie")
-        if len(self.matchmaking_queue) >= 2:
-            p1_cli, p1_pc = self.matchmaking_queue.pop(0)
-            p2_cli, p2_pc = self.matchmaking_queue.pop(0)
-            servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
-            t = Thread(target=servGame.mainGameServer)
-            t.start()
+
+        with self.verrou:
+            if len(self.matchmaking_queue) >= 2:
+                p1_cli, p1_pc = self.matchmaking_queue.pop(0)
+                p2_cli, p2_pc = self.matchmaking_queue.pop(0)
+                servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
+                t = Thread(target=servGame.mainGameServer)
+                t.start()
 
     def remove_player_thread(self, player):
-        if player in self.lst_thread_players: 
-            print(f"Joueur {player.player.get_pseudo()} déconnecté")
-            self.lst_thread_players.remove(player)
+        with self.verrou:
+            if player in self.lst_thread_players: 
+                if player.player != None:
+                    print(f"Joueur {player.player.get_pseudo()} déconnecté")
+                    self.lst_thread_players.remove(player)
 
 
 class PlayerConnexion(Thread):
