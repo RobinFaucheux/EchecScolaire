@@ -397,7 +397,13 @@ class Client:
         if self.game is None:
             return
         self.game.set_turn(self.game.get_turn() + 1)
-
+        self.game.update_clock()
+        if self.color == Color.WHITE:
+            print(f"Temps restant : {self.game.get_time_black()}")
+            print(f"Temps restant de l'adversaire : {self.game.get_time_white()}")
+        else:
+            print(f"Temps restant : {self.game.get_time_white()}")
+            print(f"Temps restant de l'adversaire : {self.game.get_time_black()}")
 
     def main_client(self):
         self.quit = False

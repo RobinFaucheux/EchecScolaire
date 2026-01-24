@@ -357,7 +357,17 @@ class ServerGame:
             self.sess2.draw()
             self.end_game("equality", "equality")
     
-        self.game.update_clock()
+        winner = self.game.update_clock()
+        if winner is not None:
+            self.game.set_finish()
+            if winner == Color.WHITE:
+                self.sess1.win()
+                self.sess2.loose()
+                self.end_game('won', 'loose')
+            else:
+                self.sess1.loose()
+                self.sess2.win()
+                self.end_game('loose', 'won')
         self.game.set_turn(self.game.get_turn() + 1)
 
 
