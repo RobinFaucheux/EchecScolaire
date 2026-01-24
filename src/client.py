@@ -50,7 +50,7 @@ class Client:
     def connection_player(self):
         player_co = False
         print("1. Se connecter \n" \
-              "2. S'enregistrer")
+              "2. S'inscrire")
         commande = input().strip()
         match commande:
             case "1":
@@ -100,7 +100,7 @@ class Client:
                     return True
                 pass
             case _:
-                print('Veuillez entrer  une commande correctes')
+                print('Veuillez entrer une commande correcte')
         return ready
 
     def lobby(self):
@@ -118,7 +118,7 @@ class Client:
 
                 ready = self.menu_before_game()
             except:
-                print("Veuillez entrer des valeurs correctes")
+                print("Veuillez entrer des valeurs correcte")
 
     def replay_prompt(self):
         rep_ok = False
@@ -253,7 +253,7 @@ class Client:
     def demander_rematch(self):
         rep = ""
         while rep not in ["y", "n"]:
-            rep = input("Remarch ? (y/n)")
+            rep = input("Rematch ? (y/n)")
         if rep.upper() == 'Y':
             self.send_rematch()
 
@@ -283,7 +283,7 @@ class Client:
 
     def ask_end_piece(self, start):
         self.game.allowed_moves_graphic(start)
-        print("Ou voulez vous la déplacer ? (cancel pour annuler le coup)")
+        print("Où voulez vous la déplacer ? (cancel pour annuler le coup)")
         start_piece_tuple = self.game.get_board().translate(start)
         start_case_piece = self.game.get_board().get_case(start_piece_tuple)
 
@@ -330,7 +330,7 @@ class Client:
                 break
 
     def play(self):
-        print("Qu'elle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")
+        print("Quelle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")
 
         while True:
             command = input().strip().lower()
