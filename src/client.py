@@ -64,7 +64,7 @@ class Client:
                     while (name == '' or mdp == ''):    
                         name  = input ("nom :")
                         mdp = input("mot de passe : ")
-                        self.send(f'connect {name} {mdp}')
+                        self.send(f'connect#{name}#{mdp}')
                         rep = self.file.readline().strip()
                         if rep == "OK":
                             self.player_co = True
@@ -79,7 +79,7 @@ class Client:
                     while (name == '' or mdp == ''):
                         name  = input ("nom :")
                         mdp = input("mot de passe : ")
-                        self.send(f'register {name} {mdp}')
+                        self.send(f'register#{name}#{mdp}')
                         rep = self.file.readline().strip()
                         if rep == "OK":
                             self.player_co = True
@@ -215,7 +215,7 @@ class Client:
         self.sock.close()
     
     def receive(self):
-        rep = self.file.readline().strip().split(' ')
+        rep = self.file.readline().strip().split('#')
         response = rep[0]
         args = rep[1:]
         
@@ -282,7 +282,7 @@ class Client:
                     print('err')
 
     def play_piece(self, start, end):
-        self.send(f"play {start} {end}")
+        self.send(f"play#{start}#{end}")
 
     def send_rematch(self):
         self.send("replay")
@@ -391,7 +391,7 @@ class Client:
         while res not in available_promotions:
             print("Entrez la piece en laquelle vous voulez qu'elle se transforme (q, r, b, k)")
             res = input()
-        self.send(f'promote {res}')
+        self.send(f'promote#{res}')
         self.receive()
         return res
 
