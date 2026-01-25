@@ -260,6 +260,7 @@ class Client:
                         self.color = Color.WHITE
                     else:
                         self.color = Color.BLACK
+                    print("Vous êtes les", self.color.name)
                     self.game = Game(0, None, None)
                 except:
                     print("ERR")
