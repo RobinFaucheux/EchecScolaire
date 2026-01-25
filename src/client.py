@@ -34,6 +34,9 @@ class Client:
         "======================")
 
     def connection_to_server(self):
+        """
+        server connection interface
+        """
         print("Entrez l'ip du serveur (defaut : serveur local)")
         host = str(input(""))
         if host == "":
@@ -52,6 +55,9 @@ class Client:
         print("Connection au serveur effectuee avec succes")
 
     def connection_player(self):
+        """
+        player connection interface
+        """
         print("1. Se connecter \n" \
               "2. S'inscrire \n" \
               "3. Quitter")
@@ -100,6 +106,9 @@ class Client:
                 print("Veuillez entrer un nom/mdp correct")
     
     def menu_before_game(self):
+        """
+        menu before game interface
+        """
         ready = False
         print("" \
         "1. Voir son historique \n"
@@ -132,6 +141,9 @@ class Client:
         return ready
 
     def lobby(self):
+        """
+        loby interface
+        """
         ready = False
         while not ready and not self.quit:
             try :
@@ -152,6 +164,9 @@ class Client:
                 print("Veuillez entrer des valeurs correcte")
 
     def end_prompt(self):
+        """
+        post game interface
+        """
         rep_ok = False
         while not rep_ok:
             try :
@@ -177,6 +192,9 @@ class Client:
                 print(f"Erreur : {e}")
 
     def replay_other(self):
+        """
+        replay other interface
+        """
         self.send("new")
         print("En attente d'un autre joueur")
         self.receive()
@@ -197,6 +215,9 @@ class Client:
             pass
     
     def finish_game(self, win, rematch):
+        """
+        finish game interface
+        """
         if win == "win":
             print('Victoire')
         elif win == "loose":
@@ -208,6 +229,9 @@ class Client:
             self.demander_rematch()
 
     def exit(self):
+        """
+        allow to quit
+        """
         self.quit = True
         self.player_co = False
         self.file.close()
@@ -215,6 +239,9 @@ class Client:
         self.sock.close()
     
     def receive(self):
+        """
+        allow to receive the message of server
+        """
         rep = self.file.readline().strip().split(' ')
         response = rep[0]
         args = rep[1:]
@@ -285,6 +312,9 @@ class Client:
         self.send(f"play {start} {end}")
 
     def send_rematch(self):
+        """
+        rematch interface
+        """
         self.send("replay")
         print("En attente de l'autre joueur")
         ready = select.select([self.sock], [], [], REPLAY_TIMEOUT)
@@ -301,6 +331,9 @@ class Client:
         "3. Se déconnecter")
 
     def demander_rematch(self):
+        """
+        ask rematch interface
+        """
         rep = ""
         while rep not in ["y", "n"]:
             rep = input(f"Rematch ({REPLAY_TIMEOUT}s)? (y/n)")
@@ -311,6 +344,9 @@ class Client:
             
 
     def get_historicals(self, json_str):
+        """
+        historical of player interface
+        """
         historicals = json.loads(json_str)
         if not historicals:
             print("Vous n'avez aucune partie enregistrée dans votre historique")
@@ -326,6 +362,9 @@ class Client:
         print("-" * 22)
 
     def get_players(self, json_str):
+        """
+        all player connected interface
+        """
         players = json.loads(json_str)
         if not players:
             print("Aucun joueur disponible")
@@ -335,6 +374,9 @@ class Client:
 
 
     def ask_end_piece(self, start):
+        """
+        ask end piece interface
+        """
         self.game.allowed_moves_graphic(start)
         print("Où voulez vous la déplacer ? (cancel pour annuler le coup)")
         start_piece_tuple = self.game.get_board().translate(start)
@@ -386,6 +428,9 @@ class Client:
                 break
 
     def ask_promote(self) -> str:
+        """
+        ask promote interface
+        """
         available_promotions = ['q', 'r', 'b', 'k']
         res = ''
         while res not in available_promotions:
@@ -397,6 +442,9 @@ class Client:
 
 
     def play(self):
+        """
+        ask beginning of piece interface
+        """
         print("Quelle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")
 
         while True:
@@ -453,6 +501,9 @@ class Client:
 
 
     def next_turn(self):
+        """
+        allow to turn the game
+        """
         self.game.get_board().plateau_terminal()
         if self.game.current_color() == self.color.name:
             self.play()
