@@ -11,6 +11,9 @@ init()
 HOST = "127.0.0.1"
 PORT = 5555
 
+# Variable globale pour le mode GUI
+USE_GUI = True
+
 class Client:
     def __init__(self, host = "127.0.0.1", port = 5555):
         self.HOST = host
@@ -32,7 +35,7 @@ class Client:
         print("Entrez l'ip du serveur (defaut : serveur local)")
         host = str(input(""))
         if host == "":
-            host = "localhost"
+            host = "127.0.0.1"
         self.host = host
         print("Entrez le port du serveur (defaut : 5555)")
         port = input("")
@@ -41,13 +44,24 @@ class Client:
             self.port = port
         else:
             port = int(port)
-            self.port = port       
-        self.sock.connect((self.host, self.port))
+            self.port = port
+        
+        # Recréer le socket avant connexion
+        self.sock = socket.socket()
+        
+        try:
+            self.sock.connect((self.host, self.port))
+        except Exception as e:
+            print(f"Erreur de connexion: {e}")
+            self.file = None
+            return
         
         # Handshake
         try:
             # 1. Recevoir clé serveur
             len_data = self.sock.recv(4)
+            if not len_data:
+                raise Exception("Serveur n'a pas envoyé de données")
             pub_len = struct.unpack('!I', len_data)[0]
             server_pub_pem = self.sock.recv(pub_len)
             server_pub = crypto_utils.charger_cle_publique(server_pub_pem)
@@ -69,6 +83,7 @@ class Client:
         except Exception as e:
             print(f"Erreur de connexion sécurisée: {e}")
             self.sock.close()
+            self.file = None
             return
 
         print("Connection au serveur effectuee avec succes")
@@ -128,9 +143,12 @@ class Client:
         player_co = False
         ready = False
         while not ready:
-            try :
-                if self.file == None: 
+            try:
+                if self.file is None: 
                     self.connection_to_server()
+                    if self.file is None:
+                        print("Connexion échouée. Réessayer.")
+                        continue
 
                 if not player_co:
                     while not player_co:
@@ -138,8 +156,10 @@ class Client:
                     print("Connexion réussie\nBienvenue !")
 
                 ready = self.menu_before_game()
-            except:
-                print("Veuillez entrer des valeurs correctes")
+            except Exception as e:
+                print(f"Erreur: {e}")
+                self.file = None
+                player_co = False
 
     def replay_prompt(self):
         rep_ok = False
@@ -179,8 +199,21 @@ class Client:
             message (str): The message to send.
         """
         try:
+            if message.startswith("sync"):
+                # Envoi explicite de la clé de session
+                if hasattr(self, 'file') and hasattr(self, 'sock') and hasattr(self, 'session_key'):
+                    self.file.write(f"sync {self.session_key.hex()}\n")
+                    self.file.flush()
+                    rep = self.file.readline().strip()
+                    print(rep)
+                    return
             self.file.write(message + "\n")
             self.file.flush()
+            rep = self.file.readline().strip()
+            if rep.startswith("ERR"):
+                print(rep)
+            elif rep != "OK":
+                print(rep)
         except Exception:
             pass
     
@@ -242,9 +275,17 @@ class Client:
                     else:
                         self.color = Color.BLACK
                     self.game = Game(0, None, None)
-                    self.main_client()
-                except:
-                    print("ERR")
+                    
+                    if USE_GUI:
+                        # Lancer l'interface graphique
+                        from gui import ChessGUI
+                        self.gui = ChessGUI(self)
+                        self.gui.my_color = 'WHITE' if color == 'w' else 'BLACK'
+                        self.gui.run()
+                    else:
+                        self.main_client()
+                except Exception as e:
+                    print(f"ERR: {e}")
             case 'list_games':
                 json_str = " ".join(args)
                 self.get_historicals(json_str)

@@ -112,15 +112,33 @@ class Serveur:
 
 
     def handle_lobby(self, cli):
-        pc = PlayerConnexion(cli, self.connection)
+        print(">>> handle_lobby called!")
+        sys.stdout.flush()
+        # Handshake d'abord
+        print(">>> Calling handshake...")
+        sys.stdout.flush()
+        session_key = self.handshake(cli)
+        print(f">>> handshake returned: {session_key is not None}")
+        sys.stdout.flush()
+        if not session_key:
+            print("Handshake failed, closing connection")
+            cli.close()
+            return
+        
+        print("Handshake successful")
+        
+        pc = PlayerConnexion(cli, self.connection, session_key)
         while not pc.ready:
-            pc.receive()
+            if not pc.receive():
+                print("Client disconnected")
+                cli.close()
+                return
         self.matchmaking_queue.append((cli, pc))
         print(f"Joueur {pc.player.get_pseudo()} en attente.")
         if len(self.matchmaking_queue) >= 2:
             p1_cli, p1_pc = self.matchmaking_queue.pop(0)
             p2_cli, p2_pc = self.matchmaking_queue.pop(0)
-            servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
+            servGame = ServerGame(self, p1_pc, p2_pc, self.connection, p1_pc.player, p2_pc.player)
             t = Thread(target=servGame.mainGameServer)
             t.start()
 
@@ -192,45 +210,93 @@ class PlayerConnexion(Thread):
     
 
     def receive(self):
-        rep = self.file.readline().strip().split(' ')
-        response = rep[0]
-        args = rep[1:]
+        try:
+            line = self.file.readline()
+            if not line:
+                return False  # Connexion fermée
+            rep = line.strip().split(' ')
+            response = rep[0]
+            args = rep[1:]
+        except Exception as e:
+            print(f"Receive error: {e}")
+            return False
 
         match response:
             case "register":
+                if len(args) < 2:
+                    self.send("ERR Usage: register nomJoueur motDePasse")
+                    return True
                 nomJ = args[0]
                 mdpJ = args[1]
+                if not (3 <= len(nomJ) <= 10) or ' ' in nomJ:
+                    self.send("ERR Nom joueur invalide")
+                    return True
+                if len(mdpJ) < 6:
+                    self.send("ERR Mot de passe trop court")
+                    return True
                 self.register(nomJ, mdpJ)
 
             case "connect":
+                if len(args) < 2:
+                    self.send("ERR Usage: connect nomJoueur motDePasse")
+                    return True
                 nomJ = args[0]
                 mdpJ = args[1]
                 self.connect(nomJ, mdpJ)
 
-            case "list_games":
+            case "play":
+                if len(args) < 2:
+                    self.send("ERR Usage: play caseSrc caseDst")
+                    return True
                 try:
-                    if self.player is not None:
-                        historicals = self.get_historical(self.player)
-                        self.send(historicals)
-                    else:
-                        self.send("ERR")
-                except:
-                    self.send('ERR')
+                    dep = args[0]
+                    arr = args[1]
+                    self.serverGame.movePiece(dep, arr, self.color)
+                    self.send('OK')
+                except Exception as e:
+                    self.send(f'ERR {e}')
+
+            case "leave":
+                try :
+                    self.serverGame.abandon(self.color)
+                    self.send('OK')
+                except Exception as e:
+                    self.send(f'ERR {e}')
+
+            case "quit":
+                try :
+                    self.serverGame.abandon(self.color)
+                    self.send('OK')
+                    self.disconnect()
+                except Exception as e:
+                    self.send(f'ERR {e}')
+
+            case "replay":
+                try:
+                    self.serverGame.replay(self.color)
+                    self.send('OK')
+                except Exception as e:
+                    self.send(f'ERR {e}')
 
             case "new":
                 try:
-                    self.ready = True
+                    self.serverGame.new(self)
                     self.send('OK')
-                except:
-                    self.send('ERR')
+                except Exception as e:
+                    self.send(f'ERR {e}')
+
+            case _:
+                self.send('ERR Commande inconnue')
+
+        return True  # Continuer à recevoir
 
 
 
 class ServerGame:
-    def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2):
+    def __init__(self, serveur : Serveur, pc1, pc2, connection, player1, player2):
         self.serveur = serveur
-        self.socket1 = sock1
-        self.socket2 = sock2
+        self.pc1 = pc1  # PlayerConnexion avec SocketSecurise
+        self.pc2 = pc2
         self.connexion = connection
 
         self.replay_count = []
@@ -241,8 +307,8 @@ class ServerGame:
         except Exception:
             id_game = 1
 
-        self.sess1 = Session(self.serveur, self.socket1, connexion, id_game, player1, player2, Color.WHITE, self)
-        self.sess2 = Session(self.serveur, self.socket2, connexion, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
+        self.sess1 = Session(self.serveur, pc1, connection, id_game, player1, player2, Color.WHITE, self)
+        self.sess2 = Session(self.serveur, pc2, connection, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
 
 
 
@@ -376,21 +442,16 @@ class Session:
         board (Board): The game board for the current session.
     """
 
-    def __init__(self, serveur, sock, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame):
+    def __init__(self, serveur, pc, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame):
         self.connection = connection
         self.server = serveur
-        self.socket = sock
-        self.file = sock.makefile(mode="rw", encoding="utf-8")
+        self.socket = pc.sock
+        self.file = pc.file  # Utilise le SocketSecurise du PlayerConnexion
 
         player1 = player
         player2 = adversary
 
         self.serverGame = serverGame
-
-        try:
-            id_game = queries.save_game(self.connexion)
-        except Exception:
-            id_game = 1
 
         self.game = Game(id_game, player1, player2)
         self.board = self.game.get_board()
@@ -504,7 +565,9 @@ class Session:
                 except:
                     pass
             case _:
-                self.send('ERR')
+                self.send('ERR Commande inconnue')
+
+        return True  # Continuer à recevoir
 
     def disconnect(self):
         self.file.close()

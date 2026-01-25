@@ -88,10 +88,7 @@ class SocketSecurise:
             return
 
         # On chiffre tout
-        message_chiffre = self.fernet.encrypt(self.tampon_ecriture.encode('utf-8'))
-        
-        # DEBUG : Montrer que c'est chiffré SUPPRIMER EN PROD
-        print(f"\n[CRYPTO] Envoi sur réseau : {message_chiffre[:30]}... (Total {len(message_chiffre)} bytes)")
+        message_chiffre = self.fernet.encrypt(self.tampon.encode('utf-8'))
         
         # On envoie le tout + un retour à la ligne pour séparer les messages chiffrés
         self.socket.sendall(message_chiffre + b'\n')
