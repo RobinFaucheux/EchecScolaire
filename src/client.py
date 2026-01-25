@@ -235,7 +235,7 @@ class Client:
 
     def lobby(self):
         """
-        loby interface
+        lobby interface
         """
         ready = False
         while not ready and not self.quit:
@@ -296,6 +296,13 @@ class Client:
 
     
 
+
+    def send(self, message, encrypted=True):
+              """
+        Sends a message to the client through the socket.
+        """
+    
+
     def send(self, message, encrypted=True):
         try:
             if encrypted and self.final_key:
@@ -308,6 +315,9 @@ class Client:
             print(f"Send error: {e}")
     
     def finish_game(self, win, rematch):
+        """
+        finish game interface
+        """
         if win == "win":
             print('Victoire')
         elif win == "loose":
@@ -322,6 +332,9 @@ class Client:
             self.demander_rematch()
 
     def exit(self):
+        """
+        allow to quit
+        """
         self.quit = True
         self.player_co = False
         self.file.close()
@@ -424,6 +437,9 @@ class Client:
         "3. Se déconnecter")
 
     def demander_rematch(self):
+        """
+        ask rematch interface
+        """
         rep = ""
         while rep not in ["y", "n"]:
             rep = input(f"Rematch ({REPLAY_TIMEOUT}s)? (y/n)")
@@ -530,6 +546,9 @@ class Client:
                 break
 
     def ask_promote(self) -> str:
+        """
+        ask promote interface
+        """
         available_promotions = ['q', 'r', 'b', 'k']
         res = ''
         while res not in available_promotions:
@@ -541,6 +560,9 @@ class Client:
 
 
     def play(self):
+        """
+        ask beginning of piece interface
+        """
         print("Quelle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")
 
         while True:

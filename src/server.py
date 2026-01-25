@@ -310,6 +310,10 @@ class PlayerConnexion(Thread):
             return f"Error decryption: {e}"
 
     def receive(self):
+        """
+        Receives messages from the client and redirects them to the correct functions 
+        based on the message content.
+        """
         try:
             line = self.decrypt_msg(self.file.readline().strip())
         except ConnectionResetError:
