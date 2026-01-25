@@ -26,13 +26,51 @@ class Client:
         self.file = None
         self.quit = False
         self.game = None
+        self.priv_key = ec.generate_private_key(ec.SECP256R1())
+        pub_key = self.priv_key.public_key()
+        pub_bytes = pub_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        self.encoded_pub = base64.b64encode(pub_bytes).decode()
+
+        self.final_key = ''
         self.player_co = False
         self.promotable_piece = None
+        
         self.start()
         self.lobby()
         if not self.quit:
             self.receive()
             self.main_client()
+
+    def decrypt_msg(self, msg_str):
+        if not self.final_key:
+            return msg_str
+        
+        try:
+            combined_bytes = base64.b64decode(msg_str)
+            
+            aesgcm = AESGCM(self.final_key)
+            nonce = combined_bytes[:12]
+            ciphertext = combined_bytes[12:]
+            
+            decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+            print(decrypted_bytes.decode())
+            return decrypted_bytes.decode()
+        except Exception as e:
+            return f"Error decryption: {e}"
+
+    def encrypt(self, msg_str):
+        if not self.final_key:
+            return msg_str
+            
+        aesgcm = AESGCM(self.final_key)
+        nonce = os.urandom(12)  
+        ciphertext = aesgcm.encrypt(nonce, msg_str.encode(), None)
+        
+        return base64.b64encode(nonce + ciphertext).decode()
+
 
     def start(self):
         print(
@@ -112,6 +150,47 @@ class Client:
             case _:
                 print("Veuillez entrer un nom/mdp correct")
     
+    def receive_key(self):
+        try:
+            line = self.file.readline().strip()
+        except ConnectionResetError:
+            line = ""
+            
+        if not line:
+            self.quit = True
+            return
+
+        if '#' in line:
+            parts = line.split('#', 1)
+            response = parts[0]
+            arg = parts[1] 
+
+            if response == 'sync':
+                try:
+                    pem_bytes = base64.b64decode(arg)
+                    
+                    peer_pub_key = serialization.load_pem_public_key(pem_bytes)
+                    
+                    shared_secret = self.priv_key.exchange(ec.ECDH(), peer_pub_key)
+
+                    self.final_key = HKDF(
+                        algorithm=hashes.SHA256(),
+                        length=32,
+                        salt=None,
+                        info=b'session'
+                    ).derive(shared_secret)
+
+                    pub_bytes = self.priv_key.public_key().public_bytes(
+                        encoding=serialization.Encoding.PEM,
+                        format=serialization.PublicFormat.SubjectPublicKeyInfo
+                    )
+                    encoded_self = base64.b64encode(pub_bytes).decode()
+                    self.send(f'sync#{encoded_self}', encrypted=False)
+                    print("Encryption key established.")
+                except Exception as e:
+                    print(f"Key exchange failed: {e}")
+
+
     def menu_before_game(self):
         """
         menu before game interface
