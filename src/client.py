@@ -17,6 +17,7 @@ class Client:
         self.file = None
         self.quit = False
         self.game = None
+        self.player_co = False
         self.start()
         self.lobby()
         if not self.quit:
@@ -48,7 +49,6 @@ class Client:
         print("Connection au serveur effectuee avec succes")
 
     def connection_player(self):
-        player_co = False
         print("1. Se connecter \n" \
               "2. S'inscrire")
         commande = input().strip()
@@ -59,17 +59,16 @@ class Client:
                 self.send(f'connect {name} {mdp}')
                 rep = self.file.readline().strip()
                 if rep == "OK":
-                    player_co = True
+                    self.player_co = True
             case "2":
                 name  = input ("nom :")
                 mdp = input("mot de passe : ")
                 self.send(f'register {name} {mdp}')
                 rep = self.file.readline().strip()
                 if rep == "OK":
-                    player_co = True
+                    self.player_co = True
             case _:
                 print("Veuillez entrer un nom/mdp correct")
-        return player_co
     
     def menu_before_game(self):
         ready = False
@@ -104,50 +103,49 @@ class Client:
         return ready
 
     def lobby(self):
-        player_co = False
         ready = False
         while not ready:
             try :
                 if self.file == None: 
                     self.connection_to_server()
 
-                if not player_co:
-                    while not player_co:
-                        player_co = self.connection_player()
+                if not self.player_co:
+                    while not self.player_co:
+                        self.connection_player()
                     print("Connexion réussie\nBienvenue !")
 
                 ready = self.menu_before_game()
             except:
                 print("Veuillez entrer des valeurs correcte")
 
-    def replay_prompt(self):
+    def end_prompt(self):
         rep_ok = False
         while not rep_ok:
             try :
-                print("Voulez-vous rejouer contre la meme personne ?")
-                print("1. relancer contre la meme personne \n" \
-                "2. relancer contre une autre personne \n"
+                print("Que voulez vous faire ?")
+                print("1. relancer contre une nouvelle personne \n" \
+                "2. Retourner au menu d'accueil \n"
                 "3. Quitter")
                 rep = input().strip()
-
                 match rep:
-                    case "1":
-                        self.replay_same()
-                    case "2":
+                    case "1":                 
+                        rep_ok = True
                         self.replay_other()
-                    case _:
-                        self.exit()
-            except:
-                pass
+                    case "2":                    
+                        rep_ok = True
+                        self.lobby()
+                    case "3":
+                        rep_ok = True
+                        self.send("quit")
+                        rep = self.file.readline().strip()
+                        if rep == "OK":
+                            self.exit()
+            except Exception as e:
+                print(f"Erreur : {e}")
 
     def replay_other(self):
         self.send("new")
         print("En attente d'un autre joueur")
-        self.receive()
-
-    def replay_same(self):
-        self.send("replay")
-        print("En attente de l'autre joueur")
         self.receive()
 
     def send(self, message):
@@ -176,12 +174,14 @@ class Client:
 
     def exit(self):
         self.quit = True
+        self.player_co = False
         self.file.close()
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
     
     def receive(self):
         rep = self.file.readline().strip().split(' ')
+        print(rep)
         response = rep[0]
         args = rep[1:]
         
@@ -256,6 +256,9 @@ class Client:
             rep = input("Rematch ? (y/n)")
         if rep.upper() == 'Y':
             self.send_rematch()
+        else:
+            self.end_prompt()
+            
 
     def get_historicals(self, json_str):
         historicals = json.loads(json_str)
@@ -407,12 +410,9 @@ class Client:
 
     def main_client(self):
         self.quit = False
-        self.quit = False
         while not self.quit:
             if self.game is None:
-                self.receive() 
-                if self.game is None:
-                    break
+                self.receive()
             else:
                 self.next_turn()
 
