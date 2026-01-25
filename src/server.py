@@ -221,6 +221,12 @@ class PlayerConnexion(Thread):
             print(f"Receive error: {e}")
             return False
 
+        # Tant que le joueur n'est pas en partie, n'accepter que register, connect, list_games, new
+        if not hasattr(self, 'serverGame') or self.serverGame is None:
+            if response not in ["register", "connect", "list_games", "new"]:
+                self.send("ERR Pas encore en partie")
+                return True
+
         match response:
             case "register":
                 if len(args) < 2:
@@ -244,50 +250,24 @@ class PlayerConnexion(Thread):
                 mdpJ = args[1]
                 self.connect(nomJ, mdpJ)
 
-            case "play":
-                if len(args) < 2:
-                    self.send("ERR Usage: play caseSrc caseDst")
-                    return True
+            case "list_games":
                 try:
-                    dep = args[0]
-                    arr = args[1]
-                    self.serverGame.movePiece(dep, arr, self.color)
-                    self.send('OK')
-                except Exception as e:
-                    self.send(f'ERR {e}')
-
-            case "leave":
-                try :
-                    self.serverGame.abandon(self.color)
-                    self.send('OK')
-                except Exception as e:
-                    self.send(f'ERR {e}')
-
-            case "quit":
-                try :
-                    self.serverGame.abandon(self.color)
-                    self.send('OK')
-                    self.disconnect()
-                except Exception as e:
-                    self.send(f'ERR {e}')
-
-            case "replay":
-                try:
-                    self.serverGame.replay(self.color)
-                    self.send('OK')
-                except Exception as e:
-                    self.send(f'ERR {e}')
-
+                    if self.player is not None:
+                        historicals = self.get_historical(self.player)
+                        self.send(historicals)
+                    else:
+                        self.send("ERR")
+                except:
+                    self.send('ERR')
             case "new":
-                try:
-                    self.serverGame.new(self)
-                    self.send('OK')
-                except Exception as e:
-                    self.send(f'ERR {e}')
-
+                self.ready = True
+                self.send("OK")
+            # Les autres commandes ne sont traitées que si self.serverGame existe
             case _:
-                self.send('ERR Commande inconnue')
-
+                if not hasattr(self, 'serverGame') or self.serverGame is None:
+                    self.send('ERR Pas encore en partie')
+                else:
+                    return False  # Laisser la session de jeu prendre le relais
         return True  # Continuer à recevoir
 
 
@@ -526,47 +506,64 @@ class Session:
         self.send("exit")
 
     def receive(self):
-        rep = self.file.readline().strip().split(' ')
-        response = rep[0]
-        args = rep[1:]
-        print(rep)
+        try:
+            line = self.file.readline()
+            if not line:
+                return False  # Connexion fermée
+            rep = line.strip().split(' ')
+            response = rep[0]
+            args = rep[1:]
+        except Exception as e:
+            print(f"Receive error: {e}")
+            return False
+
+        # Tant que le joueur n'est pas en partie, n'accepter que register, connect, list_games, new
+        if not hasattr(self, 'serverGame') or self.serverGame is None:
+            if response not in ["register", "connect", "list_games", "new"]:
+                self.send("ERR Pas encore en partie")
+                return True
 
         match response:
-            case "play":
+            case "register":
+                if len(args) < 2:
+                    self.send("ERR Usage: register nomJoueur motDePasse")
+                    return True
+                nomJ = args[0]
+                mdpJ = args[1]
+                if not (3 <= len(nomJ) <= 10) or ' ' in nomJ:
+                    self.send("ERR Nom joueur invalide")
+                    return True
+                if len(mdpJ) < 6:
+                    self.send("ERR Mot de passe trop court")
+                    return True
+                self.register(nomJ, mdpJ)
+
+            case "connect":
+                if len(args) < 2:
+                    self.send("ERR Usage: connect nomJoueur motDePasse")
+                    return True
+                nomJ = args[0]
+                mdpJ = args[1]
+                self.connect(nomJ, mdpJ)
+
+            case "list_games":
                 try:
-                    dep = args[0]
-                    arr = args[1]
-                    self.serverGame.movePiece(dep, arr, self.color)
-                    self.send('OK')
-                except:
-                    self.send('ERR')
-            case "leave":
-                try :
-                    self.serverGame.abandon(self.color)
-                    self.send('OK')
-                except:
-                    self.send('ERR')
-            case "quit":
-                try :
-                    self.serverGame.abandon(self.color)
-                    self.send('OK')
-                    self.disconnect()
-                except:
-                    self.send('ERR')
-            case "replay":
-                try:
-                    self.serverGame.replay(self.color)
-                    self.send('OK')
+                    if self.player is not None:
+                        historicals = self.get_historical(self.player)
+                        self.send(historicals)
+                    else:
+                        self.send("ERR")
                 except:
                     self.send('ERR')
             case "new":
-                try:
-                    self.serverGame.new(self)
-                except:
-                    pass
+                self.ready = True
+                self.send("OK")
+            # Les autres commandes ne sont traitées que si self.serverGame existe
             case _:
-                self.send('ERR Commande inconnue')
-
+                if not hasattr(self, 'serverGame') or self.serverGame is None:
+                    self.send('ERR Pas encore en partie')
+                else:
+                    return False  # Laisser la session de jeu prendre le relais
         return True  # Continuer à recevoir
 
     def disconnect(self):

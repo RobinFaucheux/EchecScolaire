@@ -128,9 +128,12 @@ class Client:
             case "2":
                 self.send("new")  
                 rep = self.file.readline().strip()
+                print(rep)
                 if rep == "OK":
                     ready = True
                     print("En attente de joueurs")
+                else:
+                    print("Impossible de chercher une game :", rep)
             case "3":
                 # self.send("quit") TODO
                 # self.exit()
