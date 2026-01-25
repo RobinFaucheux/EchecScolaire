@@ -56,7 +56,6 @@ class Client:
             ciphertext = combined_bytes[12:]
             
             decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
-            print(decrypted_bytes.decode())
             return decrypted_bytes.decode()
         except Exception as e:
             return f"Error decryption: {e}"

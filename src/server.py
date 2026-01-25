@@ -246,7 +246,7 @@ class PlayerConnexion(Thread):
             player_obj.set_historical(queries.collect_historic_game_of_player(self.connection, player_obj))   
             historicals = player_obj.get_historical()
             json_data = json.dumps(historicals)
-            return "list_games " + json_data
+            return "list_games#" + json_data
         return "ERR"
 
 
