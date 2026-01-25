@@ -1,8 +1,7 @@
+import os
 import socket
 import sys
 import json
-import struct
-import crypto_utils
 from model.game import Game
 from model.color import Color
 from model.player import Player
@@ -11,6 +10,14 @@ import db.init_db as db
 from db import queries
 from colorama import init
 from threading import Thread
+import threading
+
+import base64
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 
 init()
 
@@ -28,29 +35,19 @@ class Serveur:
         self.connection = connection
         self.matchmaking_queue = []
         self.sock = None
-        self.lstThread = []
-
-
-    def handshake(self, sock):
-        """Performs ECDH handshake and returns session key."""
-        try:
-            priv, pub = crypto_utils.generer_cles_ecdh()
-            pub_pem = crypto_utils.serialiser_cle_publique(pub)
-            sock.sendall(struct.pack('!I', len(pub_pem)) + pub_pem)
-            len_data = sock.recv(4)
-            if not len_data: return None
-            pub_len = struct.unpack('!I', len_data)[0]
-            client_pub_pem = sock.recv(pub_len)
-            client_pub = crypto_utils.charger_cle_publique(client_pub_pem)
-            shared_secret = crypto_utils.calculer_secret_partage(priv, client_pub)
-            return crypto_utils.deriver_cle_session(shared_secret)
-        except Exception as e:
-            print(f"Handshake error: {e}")
-            return None    
+        self.lst_thread_players = []
+        self.pub_key = ''
+        self.priv_key = ''
+        self.verrou = threading.Lock()
+        self.encoded_pub = ''
 
     def main_server(self, port):
         """
         Starts the server and listens for incoming client connections.
+
+        - Binds to the specified port and waits for a client to connect.
+        - Creates a Session object for the connected client.
+        - Handles exceptions and ensures the socket is closed on exit.
         """
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -58,118 +55,128 @@ class Serveur:
         try:
             sock.bind(("0.0.0.0", port))
             sock.listen(1)
-            print(f"Server listening on port {port}...")
+            print(f"Serveur en écoute sur le port {port}...")
         except Exception as e:
-            print(f"Error binding server: {e}")
+            print(f"Erreur lors de la liaison au serveur : {e}")
             return
         
         try:
+            self.priv_key = ec.generate_private_key(ec.SECP256R1())
+            self.pub_key = self.priv_key.public_key()
+
+            pub_bytes = self.pub_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+
+            # Base64 encode the key for the string message
+            self.encoded_pub = base64.b64encode(pub_bytes).decode()
+        except Exception as e:
+            print(f'Erreur lors de la generation des cles : {e}')
+
+        try:
             while True:
                 cli, addr = sock.accept()
-                print(f"New connection from {addr}")
                 t = Thread(target=self.handle_lobby, args=(cli,))
                 t.start()
-
                             
         except KeyboardInterrupt:
-            print("Server interrupted by user.")
+            print("Le serveur a été interrompu par un utilisateur")
         except Exception as e:
-            print(f"Server Error: {e}")
+            print(f"Erreur serveur: {e}")
         finally:
             try:
-                self.sock.close()
-                print("Server socket closed. Exiting.")
+                sock.close()
+                print("Connexion serveur fermée. Arrêt")
             except Exception:
                 pass
             sys.exit()
     
-    def new(self, cli1):
-        print("Waiting for player...")
-        cli, addr = self.sock.accept()
-        print(f"New connection from {addr}")
-
-        # Handshake
-        session_key = self.handshake(cli)
-        if not session_key:
-            cli.close()
-            return
-
-        print(f"Waiting for player log in")
-        pc = PlayerConnexion(cli, self.connection, session_key)
-        while pc.player is None:
-            pc.receive()
-        
-        servGame = ServerGame(self, cli1.socket, cli, self.connection, cli1.player1, pc.player)
-        t = Thread(target=servGame.mainGameServer)
-        t.start()
-        
-        self.lstThread.append(t)
-
-
+    def new(self, cli, player):
+        try:
+            real_pc = None
+            with self.verrou:
+                threads_to_test = list(self.lst_thread_players)
+            for pc in threads_to_test:
+                if pc.player.get_id() == player.get_id():
+                    real_pc = pc
+            with self.verrou:
+                self.matchmaking_queue.append((cli, real_pc))
+                print(f"Joueur {real_pc.player.get_pseudo()} en attente d'une partie")
+            with self.verrou:
+                if len(self.matchmaking_queue) >= 2:
+                    p1_cli, p1_pc = self.matchmaking_queue.pop(0)
+                    p2_cli, p2_pc = self.matchmaking_queue.pop(0)
+                    servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
+                    t = Thread(target=servGame.mainGameServer)
+                    t.start()
+        except Exception as e:
+            print(f"erreur : {e}")
 
     def handle_lobby(self, cli):
-        print(">>> handle_lobby called!")
-        sys.stdout.flush()
-        # Handshake d'abord
-        print(">>> Calling handshake...")
-        sys.stdout.flush()
-        session_key = self.handshake(cli)
-        print(f">>> handshake returned: {session_key is not None}")
-        sys.stdout.flush()
-        if not session_key:
-            print("Handshake failed, closing connection")
-            cli.close()
-            return
-        
-        print("Handshake successful")
-        
-        pc = PlayerConnexion(cli, self.connection, session_key)
+        pc = PlayerConnexion(cli, self.connection, self)
+        with self.verrou:
+            self.lst_thread_players.append(pc)
         while not pc.ready:
-            if not pc.receive():
-                print("Client disconnected")
-                cli.close()
-                return
+            pc.receive()
+        if not pc.connected:
+            return
         self.matchmaking_queue.append((cli, pc))
-        print(f"Joueur {pc.player.get_pseudo()} en attente.")
-        if len(self.matchmaking_queue) >= 2:
-            p1_cli, p1_pc = self.matchmaking_queue.pop(0)
-            p2_cli, p2_pc = self.matchmaking_queue.pop(0)
-            servGame = ServerGame(self, p1_pc, p2_pc, self.connection, p1_pc.player, p2_pc.player)
-            t = Thread(target=servGame.mainGameServer)
-            t.start()
+        print(f"Joueur {pc.player.get_pseudo()} en attente d'une partie")
 
+        with self.verrou:
+            if len(self.matchmaking_queue) >= 2:
+                p1_cli, p1_pc = self.matchmaking_queue.pop(0)
+                p2_cli, p2_pc = self.matchmaking_queue.pop(0)
+                servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player, p1_pc.final_key, p2_pc.final_key)
+                t = Thread(target=servGame.mainGameServer)
+                t.start()
+
+    def remove_player_thread(self, player):
+        with self.verrou:
+            if player in self.lst_thread_players: 
+                if player.player is not None:
+                    pseudo = player.player.get_pseudo() 
+                else:
+                    pseudo = "Anonyme"
+                print(f"Joueur {pseudo} déconnecté")
+                self.lst_thread_players.remove(player)
 
 
 class PlayerConnexion(Thread):
-    def __init__(self, sock, connexion, session_key=None):
+    def __init__(self, sock, connection, server : Serveur):
+        Thread.__init__(self)
+        self.server = server
         self.sock = sock
-        if session_key:
-            self.file = crypto_utils.SocketSecurise(sock, session_key)
-        else:
-            self.file = sock.makefile(mode="rw", encoding="utf-8")
+        self.file = sock.makefile(mode="rw", encoding="utf-8")
         self.player = None
-        self.connexion = connexion
+        self.connection = connection
         self.ready = False
+        self.connected = True
+        self.final_key = ''
+        self.send(f'sync#{self.server.encoded_pub}', False)
+        self.receive_key()
 
     
-    def send(self, message):
-        """
-        Sends a message to the client through the socket.
-        """
+    def send(self, message, encrypted=True):
         try:
-            self.file.write(message + "\n")
+            if encrypted and self.final_key:
+                payload = self.encrypt(message)
+                self.file.write(payload + '\n')
+            else:
+                self.file.write(message + "\n")
             self.file.flush()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Send error: {e}")
 
 
     def connect(self, name, passwd):
-        row = queries.connect_player(self.connexion, name)
+        row = queries.connect_player(self.connection, name)
         if row is not None:
-            hashed_stored = row[2]
-            # Vérifie le mot de passe hashé
-            if crypto_utils.verifier_mdp(hashed_stored, passwd):
+            password = row[2]
+            if password == passwd:
                 self.player = Player(row[0], row[1], row[3], [])
+                print(f"Joueur {self.player.get_pseudo()} connecté")
                 self.send('OK')
             else:
                 self.send("ERR")
@@ -178,11 +185,9 @@ class PlayerConnexion(Thread):
 
 
     def register(self, name, passwd):
-        # Hasher le mot de passe avant stockage
-        hashed = crypto_utils.hacher_mdp(passwd)
-        id = queries.register_player(self.connexion, name, hashed)
+        id = queries.register_player(self.connection, name, passwd)
         if id is not None:
-            row = queries.collect_player(self.connexion, id)
+            row = queries.collect_player(self.connection, id)
             self.player = Player(row[0], row[1], row[3], [])
             self.send('OK')
         else:
@@ -191,57 +196,124 @@ class PlayerConnexion(Thread):
 
     def get_historical(self, player: Player):
         id = player.get_id()
-        player = queries.collect_player(self.connexion, id)
+        player = queries.collect_player(self.connection, id)
         player_obj = None
         if player:
             player_obj = Player(player[0], player[1], player[3])
-            player_obj.set_historical(queries.collect_historic_game_of_player(self.connexion, player_obj))   
+            player_obj.set_historical(queries.collect_historic_game_of_player(self.connection, player_obj))   
             historicals = player_obj.get_historical()
             json_data = json.dumps(historicals)
             return "list_games " + json_data
         return "ERR"
-    
+
+
+    def get_list_players(self):
+        list_players = []
+        for player in self.server.lst_thread_players:
+            if player.player is not None:
+                list_players.append(player.player.get_pseudo())
+        json_data = json.dumps(list_players)
+        return json_data
+
+
+    def receive_key(self):
+        try:
+            line = self.file.readline().strip()
+        except Exception:
+            line = ""
+            
+        if not line:
+            self.server.remove_player_thread(self)
+            self.connected = False
+            self.ready = True
+            return
+
+        parts = line.split('#', 1)
+        if len(parts) < 2:
+            return
+
+        response, arg = parts[0], parts[1]
+        
+        if response == 'sync':
+            try:
+                client_pub_bytes = base64.b64decode(arg)
+                
+                peer_pub_key = serialization.load_pem_public_key(client_pub_bytes)
+                
+                shared_secret = self.server.priv_key.exchange(ec.ECDH(), peer_pub_key)
+
+                self.final_key = HKDF(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=None,
+                    info=b'session'
+                ).derive(shared_secret)
+                
+                print(f"Encryption established with a new client.")
+            except Exception as e:
+                print(f"Server Key Exchange Error: {e}")
+
+    def encrypt(self, msg_str):
+        if not self.final_key:
+            return msg_str
+            
+        aesgcm = AESGCM(self.final_key)
+        nonce = os.urandom(12)  
+        ciphertext = aesgcm.encrypt(nonce, msg_str.encode(), None)
+        
+        return base64.b64encode(nonce + ciphertext).decode()
+
+    def decrypt_msg(self, msg_str):
+        if not self.final_key or not msg_str:
+            return msg_str
+        
+        try:
+            combined_bytes = base64.b64decode(msg_str)
+            
+            aesgcm = AESGCM(self.final_key)
+            nonce = combined_bytes[:12]
+            ciphertext = combined_bytes[12:]
+            
+            decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+            print(decrypted_bytes.decode())
+
+            return decrypted_bytes.decode()
+        except Exception as e:
+            if "sync" in msg_str: return msg_str 
+            return f"Error decryption: {e}"
 
     def receive(self):
         try:
-            line = self.file.readline()
-            if not line:
-                return False  # Connexion fermée
-            rep = line.strip().split(' ')
-            response = rep[0]
-            args = rep[1:]
-        except Exception as e:
-            print(f"Receive error: {e}")
-            return False
-
-        # Tant que le joueur n'est pas en partie, n'accepter que register, connect, list_games, new
-        if not hasattr(self, 'serverGame') or self.serverGame is None:
-            if response not in ["register", "connect", "list_games", "new"]:
-                self.send("ERR Pas encore en partie")
-                return True
+            line = self.decrypt_msg(self.file.readline().strip())
+        except ConnectionResetError:
+            line = ""
+            
+        if not line:
+            self.server.remove_player_thread(self)
+            self.connected = False
+            self.ready = True
+            return
+            
+        rep = line.strip().split('#')
+        response = rep[0]
+        args = rep[1:]
 
         match response:
             case "register":
-                if len(args) < 2:
-                    self.send("ERR Usage: register nomJoueur motDePasse")
-                    return True
-                nomJ = args[0]
-                mdpJ = args[1]
-                if not (3 <= len(nomJ) <= 10) or ' ' in nomJ:
-                    self.send("ERR Nom joueur invalide")
-                    return True
-                if len(mdpJ) < 6:
-                    self.send("ERR Mot de passe trop court")
-                    return True
-                self.register(nomJ, mdpJ)
+                try:
+                    nomJ = args[0]
+                    mdpJ = args[1]
+                    self.register(nomJ, mdpJ)
+                except:
+                    self.send('ERR')
 
             case "connect":
-                if len(args) < 2:
-                    self.send("ERR Usage: connect nomJoueur motDePasse")
-                    return True
-                nomJ = args[0]
-                mdpJ = args[1]
-                self.connect(nomJ, mdpJ)
+                try:
+                    nomJ = args[0]
+                    mdpJ = args[1]
+                    self.connect(nomJ, mdpJ)
+                except:
+                    self.send('ERR')
 
             case "list_games":
                 try:
@@ -252,65 +324,88 @@ class PlayerConnexion(Thread):
                         self.send("ERR")
                 except:
                     self.send('ERR')
+
+            case "players":
+                try:
+                    self.send("players#" + self.get_list_players())
+                except:
+                    self.send('ERR')
+
             case "new":
-                self.ready = True
-                self.send("OK")
-            # Les autres commandes ne sont traitées que si self.serverGame existe
+                try:
+                    self.ready = True
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            
+            case "quit":
+                try:
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+                
             case _:
-                if not hasattr(self, 'serverGame') or self.serverGame is None:
-                    self.send('ERR Pas encore en partie')
-                else:
-                    return False  # Laisser la session de jeu prendre le relais
-        return True  # Continuer à recevoir
+                self.send('ERR')
 
 
 
 class ServerGame:
-    def __init__(self, serveur : Serveur, pc1, pc2, connection, player1, player2):
+    def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2, final_key_1, final_key_2):
         self.serveur = serveur
-        self.pc1 = pc1  # PlayerConnexion avec SocketSecurise
-        self.pc2 = pc2
-        self.connexion = connection
-
-        self.replay_count = []
-
-        
+        self.socket1 = sock1
+        self.socket2 = sock2
+        self.connection = connection
+        self.piece_played = False
+        self.replay_count = [] 
+        self.player1 = player1
+        self.player2 = player2
         try:
-            id_game = queries.save_game(self.connexion)
+            id_game = queries.save_game(self.connection)
         except Exception:
             id_game = 1
 
-        self.sess1 = Session(self.serveur, pc1, connection, id_game, player1, player2, Color.WHITE, self)
-        self.sess2 = Session(self.serveur, pc2, connection, id_game, player2, player1, Color.BLACK, self)
-
-
-
+        self.sess1 = Session(self.serveur, self.socket1, self.connection, id_game, player1, player2, Color.WHITE, self, final_key_1)
+        self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self, final_key_2) # session2.wav go stream
         self.current_player = self.sess1
         self.current_color = Color.WHITE
-
+        self.promotable_piece = None
         self.game = Game(id_game, player1, player2)
 
 
-    def new(self, session):
-        self.serveur.new(session)
+    def new(self, player):
+        if player.get_id() == self.player1.get_id():
+            self.serveur.new(self.socket1, self.player1)
+        else:
+            self.serveur.new(self.socket2, self.player2)
+
+    def promote(self, type) -> bool:
+        if self.game.get_board().get_case(self.game.get_board().translate(self.promotable_piece)).get_piece().get_color() == Color.WHITE:
+            self.sess2.promote(type)
+        else:
+            self.sess1.promote(type)
+        return self.game.promote(self.promotable_piece, type)
 
     def movePiece(self, start, end, color):
         if self.game.current_color() == color.name:
-            self.game.move(start, end)
-            if color == Color.WHITE:
-                self.sess2.send_adversary_move(start, end)
-            else:
-                self.sess1.send_adversary_move(start, end)
-        try:
-            queries.save_coup(self.connection, self.game.get_id_g(),
-                                self.game.get_turn(), start,
-                                end)
-        except Exception:
-            pass
+            if self.game.move(start, end):
+                if color == Color.WHITE:
+                    self.sess2.send_adversary_move(start, end)
+                else:
+                    self.sess1.send_adversary_move(start, end)
+                self.piece_played = True
+            if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                self.promotable_piece = end
+                self.current_player.receive()
+            try:
+                queries.save_coup(self.connection, self.game.get_id_g(),
+                                    self.game.get_turn(), start,
+                                    end)
+            except Exception:
+                pass
 
-    
 
     def abandon(self, color):
+        self.game.set_finish()
         if color == Color.WHITE:
             self.sess2.win()
             self.sess1.loose()
@@ -322,13 +417,30 @@ class ServerGame:
             self.end_game('won', 'loose')
 
 
-
     def replay(self, color):
+        print(f"Demande de replay reçue de {color}")
         if color not in self.replay_count:
-            self.replay_count.append(self.color)
+            self.replay_count.append(color)
+
+        if color == Color.WHITE:
+                self.current_player = self.sess2
+        else:
+                self.current_player = self.sess1
         
-        if len(self.replay_count == 2):
-            self = ServerGame(self.serveur, self.socket1, self.socket2, self.connexion)
+        if len(self.replay_count) == 2:
+            p1 = self.game.get_joueur(0)
+            p2 = self.game.get_joueur(1)
+            try:
+                new_id = queries.save_game(self.connection)
+            except:
+                new_id = self.game.get_id_g() + 1
+
+            self.game = Game(new_id, p1, p2)
+            self.game.set_turn(1)
+            self.replay_count = []
+            self.current_player = self.sess1
+            self.current_color = Color.WHITE
+            self.mainGameServer()
 
 
     def next(self):
@@ -340,7 +452,6 @@ class ServerGame:
             self.current_color = Color.WHITE
 
 
-
     def end_game(self, status_player_1 : str, status_player_2 : str):
         try:
             old_elo_player1 = self.game.get_joueur(0).get_elo()
@@ -349,12 +460,12 @@ class ServerGame:
             self.game.get_joueur(0).calculate_elo(old_elo_player2, status_player_1)
             self.game.get_joueur(1).calculate_elo(old_elo_player1, status_player_2)
 
-            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
+            queries.save_final_game(self.connection, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(0), status_player_1)
-            queries.save_final_game(self.connexion, self.game, self.game.get_id_g(),
+            queries.save_final_game(self.connection, self.game, self.game.get_id_g(),
                                     self.game.get_joueur(1), status_player_2)
         except Exception as e:
-            print(f"Error saving game results: {e}")
+            print(f"Erreur lors de la sauvegarde des résultats de jeu: {e}")
 
 
     def next_turn(self):
@@ -373,18 +484,15 @@ class ServerGame:
                 self.sess1.loose()
                 self.end_game("loose", "won")
                 
-
         if self.game.is_stalemate(self.current_color.name):
             self.game.set_finish()
             self.sess1.draw()
             self.sess2.draw()
             self.end_game("equality", "equality")
-        
+    
         self.game.update_clock()
-        
-        
-
         self.game.set_turn(self.game.get_turn() + 1)
+
 
     def set_player(self, color : Color, player : Player):
         if color == Color.BLACK:
@@ -396,47 +504,99 @@ class ServerGame:
     def mainGameServer(self):
         self.sess1.start('w')
         self.sess2.start('b')
+        self.sess1.game = self.game
+        self.sess1.board = self.game.get_board()
+        self.sess2.game = self.game
+        self.sess2.board = self.game.get_board()
         while self.sess1.opened and self.sess2.opened:
-            self.current_player.receive()
-            self.next_turn()
-            
-        
-        
+            result = self.current_player.receive()
+            if not result:
+                break #Maybe cette ligne casse la deconnexion
+            if not self.game.get_finish():
+                if self.piece_played:
+                    self.next_turn()
+                    self.piece_played = False
+
 
 class Session:
     """
     Represents a single game session between the server and a client.
+
+    Attributes:
+        server (serveur): Reference to the parent server.
+        socket (socket.socket): The socket connected to the client.
+        file (TextIO): A file-like wrapper around the socket for reading/writing text.
+        game (Game): The chess game being played in this session.
+        board (Board): The game board for the current session.
     """
 
-    def __init__(self, serveur, pc, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame):
+    def __init__(self, serveur, sock, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame, final_key):
         self.connection = connection
         self.server = serveur
-        self.socket = pc.sock
-        self.file = pc.file  # Utilise le SocketSecurise du PlayerConnexion
-
-        player1 = player
-        player2 = adversary
-
+        self.socket = sock
+        self.file = sock.makefile(mode="rw", encoding="utf-8")
+        self.player1 = player
+        self.final_key = final_key
+        self.player2 = adversary
         self.serverGame = serverGame
-
-        self.game = Game(id_game, player1, player2)
+        self.game = Game(id_game, self.player1, self.player2)
         self.board = self.game.get_board()
-
         self.opened = True
-
         self.color = color
 
 
     def format_time(self, seconds: float) -> str:
+        """
+        Converts a number of seconds into a MM:SS string format.
+
+        Args:
+            seconds (float): The number of seconds.
+
+        Returns:
+            str: The formatted time string as MM:SS.
+        """
         seconds = max(0, int(seconds))
         return f"{seconds // 60:02}:{seconds % 60:02}"
 
-    def send(self, message):
+    def encrypt(self, msg_str):
+        if not self.final_key:
+            return msg_str
+            
+        aesgcm = AESGCM(self.final_key)
+        nonce = os.urandom(12)  
+        ciphertext = aesgcm.encrypt(nonce, msg_str.encode(), None)
+        
+        return base64.b64encode(nonce + ciphertext).decode()
+
+    def decrypt_msg(self, msg_str):
+        if not self.final_key or not msg_str:
+            return msg_str
+        
         try:
-            self.file.write(message + "\n")
+            combined_bytes = base64.b64decode(msg_str)
+            
+            aesgcm = AESGCM(self.final_key)
+            nonce = combined_bytes[:12]
+            ciphertext = combined_bytes[12:]
+            
+            decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+            print(decrypted_bytes.decode())
+            return decrypted_bytes.decode()
+        except Exception as e:
+            if "sync" in msg_str: return msg_str 
+            return f"Error decryption: {e}"
+
+
+    def send(self, message, encrypted=True):
+        try:
+            if encrypted and self.final_key:
+                payload = self.encrypt(message)
+                self.file.write(payload + '\n')
+            else:
+                self.file.write(message + "\n")
             self.file.flush()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Send error: {e}")
     
     def connect(self, name, passwd):
         row = queries.connect_player(self.connection, name)
@@ -458,11 +618,14 @@ class Session:
         else:
             self.send("ERR")
 
+    def promote(self, type):
+        self.send(f'promote#{type}')
+
     def start(self, color):
-        self.send(f'start {color}')
+        self.send(f'start#{color}')
 
     def send_adversary_move(self, start, end):
-        self.send("play_ad "+start+" "+end)
+        self.send("play_ad#"+start+"#"+end)
 
     def win(self):
         self.send("win")
@@ -478,97 +641,82 @@ class Session:
 
     def receive(self):
         try:
-            line = self.file.readline()
-            if not line:
-                return False  # Connexion fermée
-            rep = line.strip().split(' ')
-            response = rep[0]
-            args = rep[1:]
-        except Exception as e:
-            print(f"Receive error: {e}")
-            return False
-
-        # Tant que le joueur n'est pas en partie, n'accepter que register, connect, list_games, new
-        if not hasattr(self, 'serverGame') or self.serverGame is None:
-            if response not in ["register", "connect", "list_games", "new"]:
-                self.send("ERR Pas encore en partie")
-                return True
+            line = self.decrypt_msg(self.file.readline().strip())
+        except ConnectionResetError:
+            line = ""
+            
+        if not line:
+            self.server.remove_player_thread(self)
+            self.connected = False
+            self.ready = True
+            return
+            
+        rep = line.strip().split('#')
+        response = rep[0]
+        args = rep[1:]
+        print(rep)
 
         match response:
-            case "register":
-                if len(args) < 2:
-                    self.send("ERR Usage: register nomJoueur motDePasse")
-                    return True
-                nomJ = args[0]
-                mdpJ = args[1]
-                if not (3 <= len(nomJ) <= 10) or ' ' in nomJ:
-                    self.send("ERR Nom joueur invalide")
-                    return True
-                if len(mdpJ) < 6:
-                    self.send("ERR Mot de passe trop court")
-                    return True
-                self.register(nomJ, mdpJ)
-
-            case "connect":
-                if len(args) < 2:
-                    self.send("ERR Usage: connect nomJoueur motDePasse")
-                    return True
-                nomJ = args[0]
-                mdpJ = args[1]
-                self.connect(nomJ, mdpJ)
-
-            case "list_games":
+            case "play":
                 try:
-                    if self.player is not None:
-                        historicals = self.get_historical(self.player)
-                        self.send(historicals)
-                    else:
-                        self.send("ERR")
+                    dep = args[0]
+                    arr = args[1]
+                    self.serverGame.movePiece(dep, arr, self.color)
+                    self.send('OK')
+                except:
+                    self.send('ERR')
+            case "leave":
+                try :
+                    self.serverGame.abandon(self.color)
+                    return True
+                except:
+                    self.send('ERR')
+                    return True
+            case "quit":
+                try :
+                    self.send('OK')
+                    self.disconnect()
+                except:
+                    self.send('ERR')
+            case "replay":
+                try:
+                    self.serverGame.replay(self.color)
+                    return True
                 except:
                     self.send('ERR')
             case "new":
-                self.ready = True
-                self.send("OK")
-
-            case "play":
-                if len(args) == 2:
-                    start = args[0]
-                    end = args[1]
-                    self.serverGame.movePiece(start, end, self.color)
-                else:
+                try:
+                    self.send('OK')
+                    self.serverGame.new(self.player1)
+                    return False
+                except:
                     self.send("ERR")
-
-            # Les autres commandes ne sont traitées que si self.serverGame existe
+                    return False
+            case "promote":
+                try:
+                    r = self.serverGame.promote(args[0])
+                    if r:
+                        self.send('OK')
+                    else:
+                        self.send('ERR')
+                except:
+                    pass
             case _:
-                if not hasattr(self, 'serverGame') or self.serverGame is None:
-                    self.send('ERR Pas encore en partie')
-                else:
-                    return False  # Laisser la session de jeu prendre le relais
-        return True  # Continuer à recevoir
+                self.send('ERR')
+        return True
 
     def disconnect(self):
         self.file.close()
         self.socket.close()
         self.opened = False
 
-    def ask_input(self, prompt):
-        try:
-            self.file.write(prompt + "\nEntree : \n")
-            self.file.flush()
-
-            response = self.file.readline()
-            if not response:
-                return None
-            return response.strip().lower()
-        except Exception:
-            return None
 
 if __name__ == "__main__":
-    connexion = db.open_connexion()
-    if not db.database_already_initialized(connexion):
-        print("Initializing database...")
-        db.create_database(connexion)
+    connection = db.open_connexion()
+    if not db.database_already_initialized(connection):
+        print("Initialisation de la base de données...")
+        db.create_database(connection)
     else:
-        print("Database ready.")
+        print("Base de données prête")
 
-    Serveur(connexion).main_server(5555)
+    Serveur(connection).main_server(5555)
