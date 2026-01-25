@@ -252,7 +252,7 @@ class PlayerConnexion(Thread):
             self.ready = True
             return
             
-        rep = line.strip().split(' ')
+        rep = line.strip().split('#')
         response = rep[0]
         args = rep[1:]
 
@@ -285,7 +285,7 @@ class PlayerConnexion(Thread):
 
             case "players":
                 try:
-                    self.send("players " + self.get_list_players())
+                    self.send("players#" + self.get_list_players())
                 except:
                     self.send('ERR')
 
@@ -521,7 +521,7 @@ class ServerGame:
         while self.sess1.opened and self.sess2.opened:
             result = self.current_player.receive()
             if not result:
-                break
+                break #Maybe cette ligne casse la deconnexion
             if not self.game.get_finish():
                 if self.piece_played:
                     self.next_turn()
@@ -613,13 +613,13 @@ class Session:
             self.send("ERR")
 
     def promote(self, type):
-        self.send(f'promote {type}')
+        self.send(f'promote#{type}')
 
     def start(self, color):
-        self.send(f'start {color}')
+        self.send(f'start#{color}')
 
     def send_adversary_move(self, start, end):
-        self.send("play_ad "+start+" "+end)
+        self.send("play_ad#"+start+"#"+end)
 
     def win(self):
         self.send("win")
@@ -649,7 +649,7 @@ class Session:
             self.ready = True
             return
             
-        rep = line.strip().split(' ')
+        rep = line.strip().split('#')
         response = rep[0]
         args = rep[1:]
         print(rep)
