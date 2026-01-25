@@ -18,6 +18,7 @@ class Client:
         self.quit = False
         self.game = None
         self.player_co = False
+        self.promotable_piece = None
         self.start()
         self.lobby()
         if not self.quit:
@@ -50,23 +51,49 @@ class Client:
 
     def connection_player(self):
         print("1. Se connecter \n" \
-              "2. S'inscrire")
+              "2. S'inscrire \n" \
+              "3. Quitter")
         commande = input().strip()
         match commande:
             case "1":
-                name  = input ("nom :")
-                mdp = input("mot de passe : ")
-                self.send(f'connect {name} {mdp}')
-                rep = self.file.readline().strip()
-                if rep == "OK":
-                    self.player_co = True
+                try :
+                    name = ''
+                    mdp = ''
+                    while (name == '' or mdp == ''):    
+                        name  = input ("nom :")
+                        mdp = input("mot de passe : ")
+                        self.send(f'connect {name} {mdp}')
+                        rep = self.file.readline().strip()
+                        if rep == "OK":
+                            self.player_co = True
+                        else :
+                            print('Erreur de connexion')
+                except :
+                    print("Erreur")
             case "2":
-                name  = input ("nom :")
-                mdp = input("mot de passe : ")
-                self.send(f'register {name} {mdp}')
-                rep = self.file.readline().strip()
-                if rep == "OK":
-                    self.player_co = True
+                try :
+                    name = ''
+                    mdp = ''
+                    while (name == '' or mdp == ''):
+                        name  = input ("nom :")
+                        mdp = input("mot de passe : ")
+                        self.send(f'register {name} {mdp}')
+                        rep = self.file.readline().strip()
+                        if rep == "OK":
+                            self.player_co = True
+                        else:
+                            print("Erreur d'inscription")
+                except:
+                    print("Erreur")
+            case "3":
+                try :
+                    self.send("quit")
+                    rep = self.file.readline().strip()
+                    if rep == "OK":
+                        self.exit()
+                        return None
+                except:
+                    print("Erreur")
             case _:
                 print("Veuillez entrer un nom/mdp correct")
     
@@ -104,17 +131,21 @@ class Client:
 
     def lobby(self):
         ready = False
-        while not ready:
+        while not ready and not self.quit:
             try :
                 if self.file == None: 
                     self.connection_to_server()
 
                 if not self.player_co:
-                    while not self.player_co:
+                    while self.player_co is False and not self.quit:
                         self.connection_player()
+                    if self.quit:
+                        return
+                if self.player_co is not None:
                     print("Connexion réussie\nBienvenue !")
-
-                ready = self.menu_before_game()
+                    ready = self.menu_before_game()
+                else : 
+                    ready = True
             except:
                 print("Veuillez entrer des valeurs correcte")
 
@@ -181,7 +212,6 @@ class Client:
     
     def receive(self):
         rep = self.file.readline().strip().split(' ')
-        print(rep)
         response = rep[0]
         args = rep[1:]
         
@@ -191,6 +221,9 @@ class Client:
                     start = args[0]
                     end = args[1]
                     self.game.move(start, end)
+                    if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                        self.promotable_piece = end
+                        self.receive()
                 except:
                     print("ERR")
             case "win":
@@ -236,6 +269,12 @@ class Client:
                 print("Succes")
             case 'ERR':
                 print('ERREUR SERVEUR')
+            case 'promote':
+                try :
+                    if self.promotable_piece is not None:
+                        self.game.promote(self.promotable_piece, args[0])
+                except:
+                    print('err')
 
     def play_piece(self, start, end):
         self.send(f"play {start} {end}")
@@ -328,9 +367,23 @@ class Client:
                 if not reussi:
                     print("Mouvement impossible, veuillez choisir une case verte")
                     continue
-
                 self.play_piece(start, end)
+                if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                    t = self.ask_promote()
+                    self.game.promote(end, t)
+
                 break
+
+    def ask_promote(self) -> str:
+        available_promotions = ['q', 'r', 'b', 'k']
+        res = ''
+        while res not in available_promotions:
+            print("Entrez la piece en laquelle vous voulez qu'elle se transforme (q, r, b, k)")
+            res = input()
+        self.send(f'promote {res}')
+        self.receive()
+        return res
+
 
     def play(self):
         print("Quelle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")

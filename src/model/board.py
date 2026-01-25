@@ -150,6 +150,10 @@ class Board:
         if self.in_board(pos):
             return self.cases[pos[0]][pos[1]]
         return None
+    
+    def promote(self, case : str, type : str) -> bool:
+        c = self.get_case(self.translate(case))
+        return c.get_piece().promote(type)
 
     def get_white_king(self) -> "King":
         """
