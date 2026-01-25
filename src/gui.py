@@ -74,60 +74,55 @@ class ChessGUI:
             except Exception as e:
                 print(f"Erreur chargement board.png: {e}")
         
-        # Essayer de charger pions.png comme spritesheet
-        pions_path = os.path.join(img_path, 'pions.png')
-        if os.path.exists(pions_path):
-            try:
-                sheet = pygame.image.load(pions_path).convert()
-                # Remplacer le magenta par de la transparence
-                arr = pygame.surfarray.pixels3d(sheet)
-                alpha = pygame.surfarray.pixels_alpha(sheet)
-                magenta = (255, 0, 255)
-                mask = (arr[:,:,0] == 255) & (arr[:,:,1] == 0) & (arr[:,:,2] == 255)
-                alpha[:,:][mask] = 0
-                del arr, alpha
-                sheet = sheet.convert_alpha()
-                sheet_w, sheet_h = sheet.get_size()
-                sprite_w = sheet_w // 6
-                sprite_h = sheet_h // 2
-                pieces = ['K', 'Q', 'B', 'N', 'R', 'P']
-                colors = ['WHITE', 'BLACK']
-                for row, color in enumerate(colors):
-                    for col, piece in enumerate(pieces):
-                        x = col * sprite_w
-                        y = row * sprite_h
-                        rect = pygame.Rect(x, y, sprite_w, sprite_h)
-                        sprite = sheet.subsurface(rect).copy()
-                        # Auto-crop sur le contenu non transparent
-                        bbox = sprite.get_bounding_rect()
-                        cropped = sprite.subsurface(bbox).copy() if bbox.width > 0 and bbox.height > 0 else sprite
-                        # Redimensionner à la taille de la case
-                        image = pygame.transform.scale(cropped, (TILE_SIZE - 10, TILE_SIZE - 10))
-                        self.piece_images[(piece, color)] = image
-                print(f"Sprites chargés: {len(self.piece_images)} pièces")
-            except Exception as e:
-                print(f"Erreur chargement spritesheet: {e}")
-                self.piece_images = {}
+        # Charger les images individuelles pour chaque pièce
+        pieces = ['K', 'Q', 'B', 'N', 'R', 'P']
+        colors = ['WHITE', 'BLACK']
+        color_prefix = {'WHITE': 'white', 'BLACK': 'black'}
+        piece_name = {'K': 'king', 'Q': 'queen', 'B': 'bishop', 'N': 'knight', 'R': 'rook', 'P': 'pawn'}
+        
+        # Couleur à rendre transparente (Magenta)
+        magenta = (255, 0, 255)
+
+        for color in colors:
+            for piece in pieces:
+                filename = f"{color_prefix[color]}_{piece_name[piece]}.png"
+                path = os.path.join(img_path, filename)
+                if os.path.exists(path):
+                    try:
+                        # 1. Charger et convertir SANS alpha par pixel
+                        img = pygame.image.load(path).convert()
+                        
+                        # 2. Définir la couleur de transparence
+                        img.set_colorkey(magenta)
+                        
+                        # 3. Calcul de la taille en gardant le ratio
+                        rect = img.get_rect()
+                        target_height = TILE_SIZE - 15  # Marge de sécurité
+                        ratio = target_height / rect.height
+                        new_width = int(rect.width * ratio)
+                        new_height = int(rect.height * ratio)
+
+                        # 4. Redimensionner
+                        img = pygame.transform.smoothscale(img, (new_width, new_height))
+                        self.piece_images[(piece, color)] = img
+                    except Exception as e:
+                        print(f"Erreur chargement {filename}: {e}")
+                else:
+                    print(f"Image non trouvée: {filename}")
+        print(f"Images individuelles chargées: {len(self.piece_images)} pièces")
     
     def init_board_state(self):
         """Initialise l'état du plateau"""
         board = [[None for _ in range(8)] for _ in range(8)]
         
         # Placement initial des pièces
-        # Ligne 0 : pièces noires
         board[0] = [('R', 'BLACK'), ('N', 'BLACK'), ('B', 'BLACK'), ('Q', 'BLACK'),
                     ('K', 'BLACK'), ('B', 'BLACK'), ('N', 'BLACK'), ('R', 'BLACK')]
         board[1] = [('P', 'BLACK') for _ in range(8)]
-        # Ligne 7 : pièces blanches
+        
         board[7] = [('R', 'WHITE'), ('N', 'WHITE'), ('B', 'WHITE'), ('Q', 'WHITE'),
                     ('K', 'WHITE'), ('B', 'WHITE'), ('N', 'WHITE'), ('R', 'WHITE')]
         board[6] = [('P', 'WHITE') for _ in range(8)]
-        # Correction :
-        # Colonne 0: Tour, 1: Cavalier, 2: Fou, 3: Reine, 4: Roi, 5: Fou, 6: Cavalier, 7: Tour
-        board[0] = [('R', 'BLACK'), ('N', 'BLACK'), ('B', 'BLACK'), ('Q', 'BLACK'),
-                    ('K', 'BLACK'), ('B', 'BLACK'), ('N', 'BLACK'), ('R', 'BLACK')]
-        board[7] = [('R', 'WHITE'), ('N', 'WHITE'), ('B', 'WHITE'), ('Q', 'WHITE'),
-                    ('K', 'WHITE'), ('B', 'WHITE'), ('N', 'WHITE'), ('R', 'WHITE')]
         
         return board
     
@@ -180,22 +175,25 @@ class ChessGUI:
             self.screen.blit(text, (5, i * TILE_SIZE + TILE_SIZE // 2 - 8))
     
     def draw_piece(self, piece, row, col):
-        """Dessine une pièce sur une case"""
+        """Dessine une pièce sur une case avec centrage correct"""
         piece_type, piece_color = piece
-        x = col * TILE_SIZE + TILE_SIZE // 2
-        y = row * TILE_SIZE + TILE_SIZE // 2
         
+        # Coordonnées du centre de la case
+        center_x = col * TILE_SIZE + TILE_SIZE // 2
+        center_y = row * TILE_SIZE + TILE_SIZE // 2
+
         if (piece_type, piece_color) in self.piece_images:
-            # Utiliser l'image
             img = self.piece_images[(piece_type, piece_color)]
-            rect = img.get_rect(center=(x, y))
-            self.screen.blit(img, rect)
+            img_rect = img.get_rect()
+            # Centrage via le rect de l'image
+            img_rect.center = (center_x, center_y)
+            self.screen.blit(img, img_rect)
         else:
             # Utiliser les caractères Unicode
             symbol = PIECE_UNICODE.get(piece_type, {}).get(piece_color, '?')
             text_color = (50, 50, 50) if piece_color == 'WHITE' else (20, 20, 20)
             text = self.font.render(symbol, True, text_color)
-            text_rect = text.get_rect(center=(x, y))
+            text_rect = text.get_rect(center=(center_x, center_y))
             self.screen.blit(text, text_rect)
     
     def draw_info_panel(self):
@@ -457,18 +455,19 @@ class ChessGUI:
         parts = message.strip().split(' ')
         cmd = parts[0]
         
-        if cmd == 'move' or cmd == 'play_ad':
-            # Format: move e2 e4 ou play_ad e2 e4
-            start, end = parts[1], parts[2]
-            start_col = ord(start[0]) - ord('a')
-            start_row = 8 - int(start[1])
-            end_col = ord(end[0]) - ord('a')
-            end_row = 8 - int(end[1])
-            
-            piece = self.board_state[start_row][start_col]
-            self.board_state[end_row][end_col] = piece
-            self.board_state[start_row][start_col] = None
-            self.current_turn = 'BLACK' if self.current_turn == 'WHITE' else 'WHITE'
+        if cmd == 'play_ad':
+            # Format: play_ad e2 e4
+            if len(parts) >= 3:
+                start, end = parts[1], parts[2]
+                start_col = ord(start[0]) - ord('a')
+                start_row = 8 - int(start[1])
+                end_col = ord(end[0]) - ord('a')
+                end_row = 8 - int(end[1])
+                
+                piece = self.board_state[start_row][start_col]
+                self.board_state[end_row][end_col] = piece
+                self.board_state[start_row][start_col] = None
+                self.current_turn = 'BLACK' if self.current_turn == 'WHITE' else 'WHITE'
         
         elif cmd == 'start':
             # Format: start w ou start b
@@ -533,11 +532,6 @@ class ChessGUI:
             except Exception as e:
                 print(f"Erreur écoute serveur: {e}")
                 break
-    
-    def send_move(self, start, end):
-        """Envoie un mouvement au serveur"""
-        if self.client:
-            self.client.send(f"play {start} {end}")
 
 
 def main():

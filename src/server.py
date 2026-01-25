@@ -51,10 +51,6 @@ class Serveur:
     def main_server(self, port):
         """
         Starts the server and listens for incoming client connections.
-
-        - Binds to the specified port and waits for a client to connect.
-        - Creates a Session object for the connected client.
-        - Handles exceptions and ensures the socket is closed on exit.
         """
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -159,9 +155,6 @@ class PlayerConnexion(Thread):
     def send(self, message):
         """
         Sends a message to the client through the socket.
-
-        Args:
-            message (str): The message to send.
         """
         try:
             self.file.write(message + "\n")
@@ -288,7 +281,7 @@ class ServerGame:
             id_game = 1
 
         self.sess1 = Session(self.serveur, pc1, connection, id_game, player1, player2, Color.WHITE, self)
-        self.sess2 = Session(self.serveur, pc2, connection, id_game, player2, player1, Color.BLACK, self) # Session2.wav go stream
+        self.sess2 = Session(self.serveur, pc2, connection, id_game, player2, player1, Color.BLACK, self)
 
 
 
@@ -413,13 +406,6 @@ class ServerGame:
 class Session:
     """
     Represents a single game session between the server and a client.
-
-    Attributes:
-        server (serveur): Reference to the parent server.
-        socket (socket.socket): The socket connected to the client.
-        file (TextIO): A file-like wrapper around the socket for reading/writing text.
-        game (Game): The chess game being played in this session.
-        board (Board): The game board for the current session.
     """
 
     def __init__(self, serveur, pc, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame):
@@ -442,25 +428,10 @@ class Session:
 
 
     def format_time(self, seconds: float) -> str:
-        """
-        Converts a number of seconds into a MM:SS string format.
-
-        Args:
-            seconds (float): The number of seconds.
-
-        Returns:
-            str: The formatted time string as MM:SS.
-        """
         seconds = max(0, int(seconds))
         return f"{seconds // 60:02}:{seconds % 60:02}"
 
     def send(self, message):
-        """
-        Sends a message to the client through the socket.
-
-        Args:
-            message (str): The message to send.
-        """
         try:
             self.file.write(message + "\n")
             self.file.flush()
@@ -558,6 +529,15 @@ class Session:
             case "new":
                 self.ready = True
                 self.send("OK")
+
+            case "play":
+                if len(args) == 2:
+                    start = args[0]
+                    end = args[1]
+                    self.serverGame.movePiece(start, end, self.color)
+                else:
+                    self.send("ERR")
+
             # Les autres commandes ne sont traitées que si self.serverGame existe
             case _:
                 if not hasattr(self, 'serverGame') or self.serverGame is None:
@@ -572,16 +552,6 @@ class Session:
         self.opened = False
 
     def ask_input(self, prompt):
-        """
-        Sends a prompt to the client and reads their input.
-
-        Args:
-            prompt (str): The message to display to the client.
-
-        Returns:
-            str | None: The client's response, lowercased and stripped, or None if connection 
-            is closed.
-        """
         try:
             self.file.write(prompt + "\nEntree : \n")
             self.file.flush()
