@@ -14,9 +14,15 @@ To launch echecScolaire, create a .env file in the project root directory with t
 ` DB_NAME=DBmorain `
 
 # Driver SQLAlchemy to use
-# For MySQL : mysql+mysqlconnector
-# For MariaDB : mysql+pymysql
+### For MySQL : mysql+mysqlconnector
+` DB_DRIVER=mysql+mysqlconnector `
+
+### For MariaDB : mysql+pymysql
 ` DB_DRIVER=mysql+pymysql `
 
-To launch the server, simply type `python src/server.py`
-To launch a client, type `python src/client.py`
+# Launching 
+
+## Server
+ `python src/server.py`
+## Client
+ `python src/client.py`
