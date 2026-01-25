@@ -19,6 +19,7 @@ class King(Piece):
 
     def __init__(self, color: Color, case: Case):
         name = "king"
+        self.already_moved = False
         self._vectors = []
         self.init_vectors()
         super().__init__(color, case, name, self._vectors)
@@ -29,5 +30,16 @@ class King(Piece):
         """
         for i in range(-1, 2):
             for j in range(-1, 2):
-                if (i != 0 and j != 0):
+                if (i != 0 or j != 0):
                     self._vectors.append((i, j))
+        self._vectors.append((0, -2))
+        self._vectors.append((0, 2))
+    
+    def king_moved(self):
+        self.already_moved = True
+        self._vectors.pop()
+        self._vectors.pop()
+
+
+    def get_already_moved(self):
+        return self.already_moved

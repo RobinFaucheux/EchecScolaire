@@ -24,7 +24,8 @@ def main(connexion):
     input("Press enter to start the game")
 
     board = g.get_board()
-
+    board.plateau_terminal()
+    
     while not g.get_finish():
         dico = game.play_turn(connexion, board)
 

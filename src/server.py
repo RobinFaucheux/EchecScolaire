@@ -1,3 +1,4 @@
+import os
 import socket
 import sys
 import json
@@ -10,6 +11,13 @@ from db import queries
 from colorama import init
 from threading import Thread
 import threading
+
+import base64
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 
 init()
 
@@ -33,7 +41,10 @@ class Serveur:
         self.matchmaking_queue = []
         self.sock = None
         self.lst_thread_players = []
+        self.pub_key = ''
+        self.priv_key = ''
         self.verrou = threading.Lock()
+        self.encoded_pub = ''
 
     def main_server(self, port):
         """
@@ -54,6 +65,20 @@ class Serveur:
             print(f"Erreur lors de la liaison au serveur : {e}")
             return
         
+        try:
+            self.priv_key = ec.generate_private_key(ec.SECP256R1())
+            self.pub_key = self.priv_key.public_key()
+
+            pub_bytes = self.pub_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+
+            # Base64 encode the key for the string message
+            self.encoded_pub = base64.b64encode(pub_bytes).decode()
+        except Exception as e:
+            print(f'Erreur lors de la generation des cles : {e}')
+
         try:
             while True:
                 cli, addr = sock.accept()
@@ -118,7 +143,7 @@ class Serveur:
             if len(self.matchmaking_queue) >= 2:
                 p1_cli, p1_pc = self.matchmaking_queue.pop(0)
                 p2_cli, p2_pc = self.matchmaking_queue.pop(0)
-                servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
+                servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player, p1_pc.final_key, p2_pc.final_key)
                 t = Thread(target=servGame.mainGameServer)
                 t.start()
 
@@ -138,6 +163,7 @@ class Serveur:
 
 
 class PlayerConnexion(Thread):
+    def __init__(self, sock, connection, server : Serveur):
     """
     Manages a single player's connection and communication in a separate thread.
     
@@ -150,7 +176,6 @@ class PlayerConnexion(Thread):
         ready: Boolean to track if the player is ready to play.
         connected: Boolean to track if the player is currently online.
     """
-    def __init__(self, sock, connection, server):
         Thread.__init__(self)
         self.server = server
         self.sock = sock
@@ -159,20 +184,21 @@ class PlayerConnexion(Thread):
         self.connection = connection
         self.ready = False
         self.connected = True
+        self.final_key = ''
+        self.send(f'sync#{self.server.encoded_pub}', False)
+        self.receive_key()
 
     
-    def send(self, message):
-        """
-        Sends a message to the client through the socket.
-
-        Args:
-            message (str): The message to send.
-        """
+    def send(self, message, encrypted=True):
         try:
-            self.file.write(message + "\n")
+            if encrypted and self.final_key:
+                payload = self.encrypt(message)
+                self.file.write(payload + '\n')
+            else:
+                self.file.write(message + "\n")
             self.file.flush()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Send error: {e}")
 
 
     def connect(self, name, passwd):
@@ -236,13 +262,79 @@ class PlayerConnexion(Thread):
         return json_data
 
 
+    def receive_key(self):
+        try:
+            line = self.file.readline().strip()
+        except Exception:
+            line = ""
+            
+        if not line:
+            self.server.remove_player_thread(self)
+            self.connected = False
+            self.ready = True
+            return
+
+        parts = line.split('#', 1)
+        if len(parts) < 2:
+            return
+
+        response, arg = parts[0], parts[1]
+        
+        if response == 'sync':
+            try:
+                client_pub_bytes = base64.b64decode(arg)
+                
+                peer_pub_key = serialization.load_pem_public_key(client_pub_bytes)
+                
+                shared_secret = self.server.priv_key.exchange(ec.ECDH(), peer_pub_key)
+
+                self.final_key = HKDF(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=None,
+                    info=b'session'
+                ).derive(shared_secret)
+                
+                print(f"Encryption established with a new client.")
+            except Exception as e:
+                print(f"Server Key Exchange Error: {e}")
+
+    def encrypt(self, msg_str):
+        if not self.final_key:
+            return msg_str
+            
+        aesgcm = AESGCM(self.final_key)
+        nonce = os.urandom(12)  
+        ciphertext = aesgcm.encrypt(nonce, msg_str.encode(), None)
+        
+        return base64.b64encode(nonce + ciphertext).decode()
+
+    def decrypt_msg(self, msg_str):
+        if not self.final_key or not msg_str:
+            return msg_str
+        
+        try:
+            combined_bytes = base64.b64decode(msg_str)
+            
+            aesgcm = AESGCM(self.final_key)
+            nonce = combined_bytes[:12]
+            ciphertext = combined_bytes[12:]
+            
+            decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+            print(decrypted_bytes.decode())
+
+            return decrypted_bytes.decode()
+        except Exception as e:
+            if "sync" in msg_str: return msg_str 
+            return f"Error decryption: {e}"
+
     def receive(self):
         """
         Receives messages from the client and redirects them to the correct functions 
         based on the message content.
         """
         try:
-            line = self.file.readline()
+            line = self.decrypt_msg(self.file.readline().strip())
         except ConnectionResetError:
             line = ""
             
@@ -308,6 +400,7 @@ class PlayerConnexion(Thread):
 
 
 class ServerGame:
+    def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2, final_key_1, final_key_2):
     """
     Manages a live chess match between two players.
 
@@ -325,7 +418,6 @@ class ServerGame:
         current_color: The color (White/Black) currently moving.
         replay_count (list): Tracks votes to restart the game.
     """
-    def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2):
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2
@@ -339,8 +431,8 @@ class ServerGame:
         except Exception:
             id_game = 1
 
-        self.sess1 = Session(self.serveur, self.socket1, self.connection, id_game, player1, player2, Color.WHITE, self)
-        self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self)
+        self.sess1 = Session(self.serveur, self.socket1, self.connection, id_game, player1, player2, Color.WHITE, self, final_key_1)
+        self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self, final_key_2) # session2.wav go stream
         self.current_player = self.sess1
         self.current_color = Color.WHITE
         self.promotable_piece = None
@@ -546,12 +638,13 @@ class Session:
         color (Color): The piece color assigned to this player (White/Black).
     """
 
-    def __init__(self, serveur, sock, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame):
+    def __init__(self, serveur, sock, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame, final_key):
         self.connection = connection
         self.server = serveur
         self.socket = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
         self.player1 = player
+        self.final_key = final_key
         self.player2 = adversary
         self.serverGame = serverGame
         self.game = Game(id_game, self.player1, self.player2)
@@ -573,18 +666,45 @@ class Session:
         seconds = max(0, int(seconds))
         return f"{seconds // 60:02}:{seconds % 60:02}"
 
-    def send(self, message):
-        """
-        Sends a message to the client through the socket.
+    def encrypt(self, msg_str):
+        if not self.final_key:
+            return msg_str
+            
+        aesgcm = AESGCM(self.final_key)
+        nonce = os.urandom(12)  
+        ciphertext = aesgcm.encrypt(nonce, msg_str.encode(), None)
+        
+        return base64.b64encode(nonce + ciphertext).decode()
 
-        Args:
-            message (str): The message to send.
-        """
+    def decrypt_msg(self, msg_str):
+        if not self.final_key or not msg_str:
+            return msg_str
+        
         try:
-            self.file.write(message + "\n")
+            combined_bytes = base64.b64decode(msg_str)
+            
+            aesgcm = AESGCM(self.final_key)
+            nonce = combined_bytes[:12]
+            ciphertext = combined_bytes[12:]
+            
+            decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+            print(decrypted_bytes.decode())
+            return decrypted_bytes.decode()
+        except Exception as e:
+            if "sync" in msg_str: return msg_str 
+            return f"Error decryption: {e}"
+
+
+    def send(self, message, encrypted=True):
+        try:
+            if encrypted and self.final_key:
+                payload = self.encrypt(message)
+                self.file.write(payload + '\n')
+            else:
+                self.file.write(message + "\n")
             self.file.flush()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Send error: {e}")
     
     def connect(self, name, passwd):
         """
@@ -634,12 +754,13 @@ class Session:
         self.send("exit")
 
     def receive(self):
+        
         """
         Receives messages from the client and redirects them to the correct functions 
         based on the message content.
         """
         try:
-            line = self.file.readline()
+            line = self.decrypt_msg(self.file.readline().strip())
         except ConnectionResetError:
             line = ""
             

@@ -1,3 +1,4 @@
+import os
 import socket
 from model.color import Color
 from model.game import Game
@@ -5,6 +6,12 @@ from model.constant import REPLAY_TIMEOUT
 from colorama import init
 import json
 import select
+
+import base64
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 init()
 
@@ -71,7 +78,7 @@ class Client:
                         name  = input ("nom :")
                         mdp = input("mot de passe : ")
                         self.send(f'connect#{name}#{mdp}')
-                        rep = self.file.readline().strip()
+                        rep = self.decrypt_msg(self.file.readline().strip())
                         if rep == "OK":
                             self.player_co = True
                         else :
@@ -86,7 +93,7 @@ class Client:
                         name  = input ("nom :")
                         mdp = input("mot de passe : ")
                         self.send(f'register#{name}#{mdp}')
-                        rep = self.file.readline().strip()
+                        rep = self.decrypt_msg(self.file.readline().strip())
                         if rep == "OK":
                             self.player_co = True
                         else:
@@ -96,7 +103,7 @@ class Client:
             case "3":
                 try :
                     self.send("quit")
-                    rep = self.file.readline().strip()
+                    rep = self.decrypt_msg(self.file.readline().strip())
                     if rep == "OK":
                         self.exit()
                         return None
@@ -125,13 +132,13 @@ class Client:
                 self.receive()
             case "3":
                 self.send("new")  
-                rep = self.file.readline().strip()
+                rep = self.decrypt_msg(self.file.readline().strip())
                 if rep == "OK":
                     ready = True
                     print("En attente de joueurs")
             case "4":
                 self.send("quit")
-                rep = self.file.readline().strip()
+                rep = self.decrypt_msg(self.file.readline().strip())
                 if rep == "OK":
                     self.exit()
                     return True
@@ -142,13 +149,14 @@ class Client:
 
     def lobby(self):
         """
-        loby interface
+        lobby interface
         """
         ready = False
         while not ready and not self.quit:
             try :
                 if self.file == None: 
                     self.connection_to_server()
+                self.receive_key()
 
                 if not self.player_co:
                     while self.player_co is False and not self.quit:
@@ -160,8 +168,8 @@ class Client:
                     ready = self.menu_before_game()
                 else : 
                     ready = True
-            except:
-                print("Veuillez entrer des valeurs correcte")
+            except Exception as e:
+                print(f"Veuillez entrer des valeurs correctes {e}")
 
     def end_prompt(self):
         """
@@ -201,18 +209,20 @@ class Client:
 
     
 
-    def send(self, message):
-        """
-        Sends a message to the client through the socket.
 
-        Args:
-            message (str): The message to send.
+    def send(self, message, encrypted=True):
+              """
+        Sends a message to the client through the socket.
         """
         try:
-            self.file.write(message + "\n")
+            if encrypted and self.final_key:
+                payload = self.encrypt(message)
+                self.file.write(payload + '\n')
+            else:
+                self.file.write(message + "\n")
             self.file.flush()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Send error: {e}")
     
     def finish_game(self, win, rematch):
         """
@@ -242,7 +252,7 @@ class Client:
         """
         allow to receive the message of server
         """
-        rep = self.file.readline().strip().split('#')
+         rep = self.decrypt_msg(self.file.readline().strip()).split('#')
         response = rep[0]
         args = rep[1:]
         
