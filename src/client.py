@@ -17,6 +17,7 @@ class Client:
         self.file = None
         self.quit = False
         self.game = None
+        self.promotable_piece = None
         self.start()
         self.lobby()
         if not self.quit:
@@ -191,6 +192,9 @@ class Client:
                     start = args[0]
                     end = args[1]
                     self.game.move(start, end)
+                    if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                        self.promotable_piece = end
+                        self.receive()
                 except:
                     print("ERR")
             case "win":
@@ -236,6 +240,12 @@ class Client:
                 print("Succes")
             case 'ERR':
                 print('ERREUR SERVEUR')
+            case 'promote':
+                try :
+                    if self.promotable_piece is not None:
+                        self.game.promote(self.promotable_piece, args[0])
+                except:
+                    print('err')
 
     def play_piece(self, start, end):
         self.send(f"play {start} {end}")
@@ -325,9 +335,25 @@ class Client:
                 if not reussi:
                     print("Mouvement impossible, veuillez choisir une case verte")
                     continue
-
                 self.play_piece(start, end)
+                print(self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece()) # pb avec les piece qui se detruisent pas ????
+                print(self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted()) #TODO pb
+                if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                    t = self.ask_promote()
+                    self.game.promote(end, t)
+
                 break
+
+    def ask_promote(self) -> str:
+        available_promotions = ['q', 'r', 'b', 'k']
+        res = ''
+        while res not in available_promotions:
+            print("Entrez la piece en laquelle vous voulez qu'elle se transforme (q, r, b, k)")
+            res = input()
+        self.send(f'promote {res}')
+        self.receive()
+        return res
+
 
     def play(self):
         print("Quelle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")

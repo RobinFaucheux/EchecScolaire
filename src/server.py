@@ -61,7 +61,7 @@ class Serveur:
             print(f"Erreur serveur: {e}")
         finally:
             try:
-                self.sock.close()
+                sock.close()
                 print("Connexion serveur fermée. Arrêt")
             except Exception:
                 pass
@@ -243,11 +243,19 @@ class ServerGame:
         self.sess2 = Session(self.serveur, self.socket2, self.connection, id_game, player2, player1, Color.BLACK, self)
         self.current_player = self.sess1
         self.current_color = Color.WHITE
+        self.promotable_piece = None
         self.game = Game(id_game, player1, player2)
 
 
     def new(self, session):
         self.serveur.new(session)
+
+    def promote(self, type) -> bool:
+        if self.game.get_board().get_case(self.game.get_board().translate(self.promotable_piece)).get_piece().get_color() == Color.WHITE:
+            self.sess2.promote(type)
+        else:
+            self.sess1.promote(type)
+        return self.game.promote(self.promotable_piece, type)
 
     def movePiece(self, start, end, color):
         if self.game.current_color() == color.name:
@@ -257,6 +265,9 @@ class ServerGame:
                 else:
                     self.sess1.send_adversary_move(start, end)
                 self.piece_played = True
+            if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                self.promotable_piece = end
+                self.current_player.receive()
             try:
                 queries.save_coup(self.connection, self.game.get_id_g(),
                                     self.game.get_turn(), start,
@@ -455,6 +466,9 @@ class Session:
         else:
             self.send("ERR")
 
+    def promote(self, type):
+        self.send(f'promote {type}')
+
     def start(self, color):
         self.send(f'start {color}')
 
@@ -521,6 +535,15 @@ class Session:
             case "new":
                 try:
                     self.serverGame.new(self)
+                except:
+                    pass
+            case "promote":
+                try:
+                    r = self.serverGame.promote(args[0])
+                    if r:
+                        self.send('OK')
+                    else:
+                        self.send('ERR')
                 except:
                     pass
             case _:

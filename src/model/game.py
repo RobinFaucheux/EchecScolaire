@@ -220,6 +220,8 @@ class Game:
             for v in l:
                 coords.append(v)
             return self.board.plateau_terminal(piece)
+    def promote(self, pos : str, type : str) -> bool:
+        return self.board.promote(pos, type)
 
     def move(self, start: str, end: str) -> bool:
         """
