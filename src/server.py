@@ -590,27 +590,6 @@ class Session:
         self.socket.close()
         self.opened = False
 
-    def ask_input(self, prompt):
-        """
-        Sends a prompt to the client and reads their input.
-
-        Args:
-            prompt (str): The message to display to the client.
-
-        Returns:
-            str | None: The client's response, lowercased and stripped, or None if connection 
-            is closed.
-        """
-        try:
-            self.file.write(prompt + "\nEntree : \n")
-            self.file.flush()
-
-            response = self.file.readline()
-            if not response:
-                return None
-            return response.strip().lower()
-        except Exception:
-            return None
 
 if __name__ == "__main__":
     connection = db.open_connexion()
