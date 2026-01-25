@@ -26,93 +26,13 @@ class Client:
         self.file = None
         self.quit = False
         self.game = None
-
-
-        self.start()
-        self.priv_key = ec.generate_private_key(ec.SECP256R1())
-        pub_key = self.priv_key.public_key()
-        pub_bytes = pub_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        )
-        self.encoded_pub = base64.b64encode(pub_bytes).decode()
-
-        self.final_key = ''
-
         self.player_co = False
         self.promotable_piece = None
+        self.start()
         self.lobby()
         if not self.quit:
             self.receive()
             self.main_client()
-    
-    def decrypt_msg(self, msg_str):
-        if not self.final_key:
-            return msg_str
-        
-        try:
-            combined_bytes = base64.b64decode(msg_str)
-            
-            aesgcm = AESGCM(self.final_key)
-            nonce = combined_bytes[:12]
-            ciphertext = combined_bytes[12:]
-            
-            decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
-            print(decrypted_bytes.decode())
-            return decrypted_bytes.decode()
-        except Exception as e:
-            return f"Error decryption: {e}"
-
-    def encrypt(self, msg_str):
-        if not self.final_key:
-            return msg_str
-            
-        aesgcm = AESGCM(self.final_key)
-        nonce = os.urandom(12)  
-        ciphertext = aesgcm.encrypt(nonce, msg_str.encode(), None)
-        
-        return base64.b64encode(nonce + ciphertext).decode()
-
-
-    def receive_key(self):
-        try:
-            line = self.file.readline().strip()
-        except ConnectionResetError:
-            line = ""
-            
-        if not line:
-            self.quit = True
-            return
-
-        if '#' in line:
-            parts = line.split('#', 1)
-            response = parts[0]
-            arg = parts[1] 
-
-            if response == 'sync':
-                try:
-                    pem_bytes = base64.b64decode(arg)
-                    
-                    peer_pub_key = serialization.load_pem_public_key(pem_bytes)
-                    
-                    shared_secret = self.priv_key.exchange(ec.ECDH(), peer_pub_key)
-
-                    self.final_key = HKDF(
-                        algorithm=hashes.SHA256(),
-                        length=32,
-                        salt=None,
-                        info=b'session'
-                    ).derive(shared_secret)
-
-                    pub_bytes = self.priv_key.public_key().public_bytes(
-                        encoding=serialization.Encoding.PEM,
-                        format=serialization.PublicFormat.SubjectPublicKeyInfo
-                    )
-                    encoded_self = base64.b64encode(pub_bytes).decode()
-                    self.send(f'sync#{encoded_self}', encrypted=False)
-                    print("Encryption key established.")
-                except Exception as e:
-                    print(f"Key exchange failed: {e}")
 
     def start(self):
         print(
@@ -121,6 +41,9 @@ class Client:
         "======================")
 
     def connection_to_server(self):
+        """
+        server connection interface
+        """
         print("Entrez l'ip du serveur (defaut : serveur local)")
         host = str(input(""))
         if host == "":
@@ -139,6 +62,9 @@ class Client:
         print("Connection au serveur effectuee avec succes")
 
     def connection_player(self):
+        """
+        player connection interface
+        """
         print("1. Se connecter \n" \
               "2. S'inscrire \n" \
               "3. Quitter")
@@ -187,6 +113,9 @@ class Client:
                 print("Veuillez entrer un nom/mdp correct")
     
     def menu_before_game(self):
+        """
+        menu before game interface
+        """
         ready = False
         print("" \
         "1. Voir son historique \n"
@@ -219,6 +148,9 @@ class Client:
         return ready
 
     def lobby(self):
+        """
+        lobby interface
+        """
         ready = False
         while not ready and not self.quit:
             try :
@@ -240,6 +172,9 @@ class Client:
                 print(f"Veuillez entrer des valeurs correctes {e}")
 
     def end_prompt(self):
+        """
+        post game interface
+        """
         rep_ok = False
         while not rep_ok:
             try :
@@ -265,13 +200,20 @@ class Client:
                 print(f"Erreur : {e}")
 
     def replay_other(self):
+        """
+        replay other interface
+        """
         self.send("new")
         print("En attente d'un autre joueur")
         self.receive()
 
     
 
+
     def send(self, message, encrypted=True):
+              """
+        Sends a message to the client through the socket.
+        """
         try:
             if encrypted and self.final_key:
                 payload = self.encrypt(message)
@@ -283,6 +225,9 @@ class Client:
             print(f"Send error: {e}")
     
     def finish_game(self, win, rematch):
+        """
+        finish game interface
+        """
         if win == "win":
             print('Victoire')
         elif win == "loose":
@@ -294,6 +239,9 @@ class Client:
             self.demander_rematch()
 
     def exit(self):
+        """
+        allow to quit
+        """
         self.quit = True
         self.player_co = False
         self.file.close()
@@ -301,7 +249,10 @@ class Client:
         self.sock.close()
     
     def receive(self):
-        rep = self.decrypt_msg(self.file.readline().strip()).split('#')
+        """
+        allow to receive the message of server
+        """
+         rep = self.decrypt_msg(self.file.readline().strip()).split('#')
         response = rep[0]
         args = rep[1:]
         
@@ -371,6 +322,9 @@ class Client:
         self.send(f"play#{start}#{end}")
 
     def send_rematch(self):
+        """
+        rematch interface
+        """
         self.send("replay")
         print("En attente de l'autre joueur")
         ready = select.select([self.sock], [], [], REPLAY_TIMEOUT)
@@ -387,6 +341,9 @@ class Client:
         "3. Se déconnecter")
 
     def demander_rematch(self):
+        """
+        ask rematch interface
+        """
         rep = ""
         while rep not in ["y", "n"]:
             rep = input(f"Rematch ({REPLAY_TIMEOUT}s)? (y/n)")
@@ -397,6 +354,9 @@ class Client:
             
 
     def get_historicals(self, json_str):
+        """
+        historical of player interface
+        """
         historicals = json.loads(json_str)
         if not historicals:
             print("Vous n'avez aucune partie enregistrée dans votre historique")
@@ -412,6 +372,9 @@ class Client:
         print("-" * 22)
 
     def get_players(self, json_str):
+        """
+        all player connected interface
+        """
         players = json.loads(json_str)
         if not players:
             print("Aucun joueur disponible")
@@ -421,6 +384,9 @@ class Client:
 
 
     def ask_end_piece(self, start):
+        """
+        ask end piece interface
+        """
         self.game.allowed_moves_graphic(start)
         print("Où voulez vous la déplacer ? (cancel pour annuler le coup)")
         start_piece_tuple = self.game.get_board().translate(start)
@@ -472,6 +438,9 @@ class Client:
                 break
 
     def ask_promote(self) -> str:
+        """
+        ask promote interface
+        """
         available_promotions = ['q', 'r', 'b', 'k']
         res = ''
         while res not in available_promotions:
@@ -483,6 +452,9 @@ class Client:
 
 
     def play(self):
+        """
+        ask beginning of piece interface
+        """
         print("Quelle piece voulez vous déplacer ? (quit pour quitter, leave pour abandonner)")
 
         while True:
@@ -539,6 +511,9 @@ class Client:
 
 
     def next_turn(self):
+        """
+        allow to turn the game
+        """
         self.game.get_board().plateau_terminal()
         if self.game.current_color() == self.color.name:
             self.play()

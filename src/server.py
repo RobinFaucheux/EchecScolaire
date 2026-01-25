@@ -24,11 +24,16 @@ init()
 
 class Serveur:
     """
-    Represents a chess server.
+    Manages the main chess server logic, player connections, and matchmaking.
 
     Attributes:
-        counter (int): A counter for tracking connections or sessions (currently unused).
-    """ 
+        counter (int): Counter to track sessions or connections.
+        connection: The database or network connection object.
+        matchmaking_queue (list): List of players waiting to start a game.
+        sock: The main server socket for listening to new clients.
+        lst_thread_players (list): List of active player threads.
+        verrou (Lock): A threading lock to prevent data conflicts.
+    """
 
     def __init__(self, connection):
         self.counter = 0
@@ -93,6 +98,12 @@ class Serveur:
             sys.exit()
     
     def new(self, cli, player):
+        """
+        Allows a player to start a new game after the first one ends.
+
+        - Gets player data to add them to the queue.
+        - If the queue has more than 1 player, start the game.
+        """
         try:
             real_pc = None
             with self.verrou:
@@ -114,6 +125,10 @@ class Serveur:
             print(f"erreur : {e}")
 
     def handle_lobby(self, cli):
+        """
+        Handles the client's pre-match phase. It creates the connection and adds the player 
+        to the queue. When the queue has more than 1 player, it starts the game.
+        """
         pc = PlayerConnexion(cli, self.connection, self)
         with self.verrou:
             self.lst_thread_players.append(pc)
@@ -133,6 +148,10 @@ class Serveur:
                 t.start()
 
     def remove_player_thread(self, player):
+        """
+        Removes the player and their thread from the connected players list when the player 
+        disconnects (due to a crash or quitting).
+        """
         with self.verrou:
             if player in self.lst_thread_players: 
                 if player.player is not None:
@@ -145,6 +164,18 @@ class Serveur:
 
 class PlayerConnexion(Thread):
     def __init__(self, sock, connection, server : Serveur):
+    """
+    Manages a single player's connection and communication in a separate thread.
+    
+    Attributes:
+        server: The main server instance.
+        sock: The client's socket.
+        file: A file-like object for reading and writing data (UTF-8).
+        player: The player data associated with this connection.
+        connection: The database or network connection object.
+        ready: Boolean to track if the player is ready to play.
+        connected: Boolean to track if the player is currently online.
+    """
         Thread.__init__(self)
         self.server = server
         self.sock = sock
@@ -171,6 +202,10 @@ class PlayerConnexion(Thread):
 
 
     def connect(self, name, passwd):
+        """
+        Fetches the player from the database using the provided name and password. 
+        Returns 'connected' if the player exists, otherwise returns an error
+        """
         row = queries.connect_player(self.connection, name)
         if row is not None:
             password = row[2]
@@ -185,6 +220,11 @@ class PlayerConnexion(Thread):
 
 
     def register(self, name, passwd):
+        """
+        Checks if the provided name and password already exist in the database. 
+        Returns an error if they do; otherwise, creates the new player in the 
+        database and initializes the player object
+        """
         id = queries.register_player(self.connection, name, passwd)
         if id is not None:
             row = queries.collect_player(self.connection, id)
@@ -195,6 +235,9 @@ class PlayerConnexion(Thread):
 
 
     def get_historical(self, player: Player):
+        """
+        Retrieves the player's match history from the database and converts it into JSON format.
+        """
         id = player.get_id()
         player = queries.collect_player(self.connection, id)
         player_obj = None
@@ -208,6 +251,9 @@ class PlayerConnexion(Thread):
 
 
     def get_list_players(self):
+        """
+        Returns the list of connected players as JSON by accessing the active threads.
+        """
         list_players = []
         for player in self.server.lst_thread_players:
             if player.player is not None:
@@ -283,6 +329,10 @@ class PlayerConnexion(Thread):
             return f"Error decryption: {e}"
 
     def receive(self):
+        """
+        Receives messages from the client and redirects them to the correct functions 
+        based on the message content.
+        """
         try:
             line = self.decrypt_msg(self.file.readline().strip())
         except ConnectionResetError:
@@ -351,6 +401,23 @@ class PlayerConnexion(Thread):
 
 class ServerGame:
     def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2, final_key_1, final_key_2):
+    """
+    Manages a live chess match between two players.
+
+    This class synchronizes the game logic, the two player sessions (sockets), 
+    and the database storage.
+
+    Attributes:
+        serveur: Reference to the main Server instance.
+        socket1 / socket2: Communication sockets for both players.
+        connection: Database connection to save match results.
+        player1 / player2: Player data objects.
+        game: The core chess logic instance (rules, board state).
+        sess1 / sess2: Individual session handlers for each player.
+        current_player: The session of the player whose turn it is.
+        current_color: The color (White/Black) currently moving.
+        replay_count (list): Tracks votes to restart the game.
+    """
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2
@@ -373,12 +440,19 @@ class ServerGame:
 
 
     def new(self, player):
+        """
+        Redirects the player to the server's matchmaking to start a new game.
+        Identifies which player (1 or 2) is requesting to play again.
+        """
         if player.get_id() == self.player1.get_id():
             self.serveur.new(self.socket1, self.player1)
         else:
             self.serveur.new(self.socket2, self.player2)
 
     def promote(self, type) -> bool:
+        """
+        Handles pawn promotion. Sends the chosen piece type to the opponent and updates the game board logic.
+        """
         if self.game.get_board().get_case(self.game.get_board().translate(self.promotable_piece)).get_piece().get_color() == Color.WHITE:
             self.sess2.promote(type)
         else:
@@ -386,6 +460,10 @@ class ServerGame:
         return self.game.promote(self.promotable_piece, type)
 
     def movePiece(self, start, end, color):
+        """
+        Executes a move if it's the player's turn and the move is valid.Sends the move to the opponent.
+        Checks if a pawn can be promoted at the destination. Saves the move to the database.
+        """
         if self.game.current_color() == color.name:
             if self.game.move(start, end):
                 if color == Color.WHITE:
@@ -405,6 +483,9 @@ class ServerGame:
 
 
     def abandon(self, color):
+        """
+        Ends the game immediately when a player forfeits.
+        """
         self.game.set_finish()
         if color == Color.WHITE:
             self.sess2.win()
@@ -418,6 +499,9 @@ class ServerGame:
 
 
     def replay(self, color):
+        """
+        Registers a replay request from a player.
+        """
         print(f"Demande de replay reçue de {color}")
         if color not in self.replay_count:
             self.replay_count.append(color)
@@ -444,6 +528,9 @@ class ServerGame:
 
 
     def next(self):
+        """
+        Switches the turn to the next player.
+        """
         if self.current_color == Color.WHITE:
             self.current_player = self.sess2
             self.current_color = Color.BLACK
@@ -453,6 +540,10 @@ class ServerGame:
 
 
     def end_game(self, status_player_1 : str, status_player_2 : str):
+        """
+        Finalizes the game results. Calculates the new Elo ratings for both players and saves 
+        the final match data to the database.
+        """
         try:
             old_elo_player1 = self.game.get_joueur(0).get_elo()
             old_elo_player2 = self.game.get_joueur(1).get_elo()
@@ -469,6 +560,10 @@ class ServerGame:
 
 
     def next_turn(self):
+        """
+        Processes the transition to the next turn. Checks for timeout, checkmate, or stalemate.
+        If the game is over, it triggers the end_game sequence and notifies players.
+        """
         self.next()
         if self.game.time_white <= 0 or self.game.time_black <= 0:
             self.game.set_finish()
@@ -495,6 +590,9 @@ class ServerGame:
 
 
     def set_player(self, color : Color, player : Player):
+        """
+        Assigns a player object to a specific color (Black or White) inside the game logic.
+        """
         if color == Color.BLACK:
             self.game.set_joueur(player, 1)
         else:
@@ -502,6 +600,10 @@ class ServerGame:
         
 
     def mainGameServer(self):
+        """
+        Initializes player sessions, shares the board state, and continuously listens for client moves 
+        until the game ends or a player disconnects.
+        """
         self.sess1.start('w')
         self.sess2.start('b')
         self.sess1.game = self.game
@@ -520,14 +622,20 @@ class ServerGame:
 
 class Session:
     """
-    Represents a single game session between the server and a client.
+    Represents an active communication bridge between a player and the game server.
 
     Attributes:
-        server (serveur): Reference to the parent server.
-        socket (socket.socket): The socket connected to the client.
-        file (TextIO): A file-like wrapper around the socket for reading/writing text.
-        game (Game): The chess game being played in this session.
-        board (Board): The game board for the current session.
+        connection: Database connection for queries.
+        server: Reference to the main Server instance.
+        socket: The network socket for this client.
+        file: Text stream wrapper for easy reading and writing.
+        player1: The player object associated with this session.
+        player2: The opponent player object.
+        serverGame: Reference to the ServerGame controller managing the match.
+        game: The chess logic instance.
+        board: The current state of the chess board.
+        opened (bool): True if the connection is still active.
+        color (Color): The piece color assigned to this player (White/Black).
     """
 
     def __init__(self, serveur, sock, connection, id_game, player : Player, adversary, color : Color, serverGame : ServerGame, final_key):
@@ -599,6 +707,9 @@ class Session:
             print(f"Send error: {e}")
     
     def connect(self, name, passwd):
+        """
+        Authenticates a player using their name and password.
+        """
         row = queries.connect_player(self.connection, name)
         password = row[2]
         if password == passwd:
@@ -609,6 +720,9 @@ class Session:
             self.send("ERR")
     
     def register(self, name, passwd):
+        """
+        Registers a new player in the database.
+        """
         id = queries.register_player(self.connection, name, passwd)
         if id is not None:
             self.send('OK')
@@ -640,6 +754,11 @@ class Session:
         self.send("exit")
 
     def receive(self):
+        
+        """
+        Receives messages from the client and redirects them to the correct functions 
+        based on the message content.
+        """
         try:
             line = self.decrypt_msg(self.file.readline().strip())
         except ConnectionResetError:
@@ -706,6 +825,9 @@ class Session:
         return True
 
     def disconnect(self):
+        """
+        Safely closes the communication stream and the network socket.
+        """
         self.file.close()
         self.socket.close()
         self.opened = False
