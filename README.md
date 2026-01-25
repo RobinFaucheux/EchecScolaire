@@ -4,7 +4,7 @@
 install modules : 
 ` pip install -r requirements.txt`
 
-The code was made by us, with a few small sections where we used AI to help fix some issues. 
+The code was made by us, with a few small sections where we used AI to help fix some issues and generate the logo. 
 The docstring were mostly translated using AI to fit the style of the project where all commits and code were written in english.
 
 To launch echecScolaire, create a .env file in the project root directory with the following:
