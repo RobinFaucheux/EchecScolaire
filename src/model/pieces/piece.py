@@ -169,6 +169,12 @@ class Piece:
             else:
                 l.append(v)
         return l
+    
+    def can_be_promoted(self):
+        return False
+
+    def promote(self, type):
+        return False
 
     def move(self, case: Case) -> bool:
         """

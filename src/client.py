@@ -3,6 +3,7 @@ import socket
 from model.color import Color
 from model.game import Game
 from model.constant import REPLAY_TIMEOUT
+from model.constant import REPLAY_TIMEOUT
 from colorama import init
 import json
 import select
@@ -24,6 +25,7 @@ class Client:
         self.port = port
         self.sock = socket.socket()
         self.file = None
+        self.quit = False
         self.quit = False
         self.game = None
 
@@ -121,6 +123,9 @@ class Client:
         "======================")
 
     def connection_to_server(self):
+        """
+        server connection interface
+        """
         print("Entrez l'ip du serveur (defaut : serveur local)")
         host = str(input(""))
         if host == "":
@@ -139,6 +144,9 @@ class Client:
         print("Connection au serveur effectuee avec succes")
 
     def connection_player(self):
+        """
+        player connection interface
+        """
         print("1. Se connecter \n" \
               "2. S'inscrire \n" \
               "3. Quitter")
@@ -187,6 +195,9 @@ class Client:
                 print("Veuillez entrer un nom/mdp correct")
     
     def menu_before_game(self):
+        """
+        menu before game interface
+        """
         ready = False
         print("" \
         "1. Voir son historique \n"
@@ -199,6 +210,9 @@ class Client:
                 self.send("list_games")
                 self.receive()
             case "2":
+                self.send("players")
+                self.receive()
+            case "3":
                 self.send("players")
                 self.receive()
             case "3":
@@ -216,9 +230,13 @@ class Client:
                 pass
             case _:
                 print('Veuillez entrer une commande correcte')
+                print('Veuillez entrer une commande correcte')
         return ready
 
     def lobby(self):
+        """
+        loby interface
+        """
         ready = False
         while not ready and not self.quit:
             try :
@@ -239,6 +257,10 @@ class Client:
             except Exception as e:
                 print(f"Veuillez entrer des valeurs correctes {e}")
 
+    def end_prompt(self):
+        """
+        post game interface
+        """
     def end_prompt(self):
         rep_ok = False
         while not rep_ok:
@@ -265,6 +287,9 @@ class Client:
                 print(f"Erreur : {e}")
 
     def replay_other(self):
+        """
+        replay other interface
+        """
         self.send("new")
         print("En attente d'un autre joueur")
         self.receive()
@@ -289,6 +314,9 @@ class Client:
             print('Defaite')
         else:
             print('Egalite')
+        self.game = None
+        if rematch:
+            self.demander_rematch()
         self.game = None
         if rematch:
             self.demander_rematch()
@@ -366,11 +394,20 @@ class Client:
                         self.game.promote(self.promotable_piece, args[0])
                 except:
                     print('err')
+            case 'promote':
+                try :
+                    if self.promotable_piece is not None:
+                        self.game.promote(self.promotable_piece, args[0])
+                except:
+                    print('err')
 
     def play_piece(self, start, end):
         self.send(f"play#{start}#{end}")
 
     def send_rematch(self):
+        """
+        rematch interface
+        """
         self.send("replay")
         print("En attente de l'autre joueur")
         ready = select.select([self.sock], [], [], REPLAY_TIMEOUT)
@@ -397,6 +434,9 @@ class Client:
             
 
     def get_historicals(self, json_str):
+        """
+        historical of player interface
+        """
         historicals = json.loads(json_str)
         if not historicals:
             print("Vous n'avez aucune partie enregistrée dans votre historique")
@@ -419,8 +459,22 @@ class Client:
         chaine = "Liste des joueurs connectés : " + " / ".join(players)
         print(chaine)
 
+    def get_players(self, json_str):
+        """
+        all player connected interface
+        """
+        players = json.loads(json_str)
+        if not players:
+            print("Aucun joueur disponible")
+            return
+        chaine = "Liste des joueurs connectés : " + " / ".join(players)
+        print(chaine)
+
 
     def ask_end_piece(self, start):
+        """
+        ask end piece interface
+        """
         self.game.allowed_moves_graphic(start)
         print("Où voulez vous la déplacer ? (cancel pour annuler le coup)")
         start_piece_tuple = self.game.get_board().translate(start)
@@ -469,6 +523,10 @@ class Client:
                     t = self.ask_promote()
                     self.game.promote(end, t)
 
+                if self.game.get_board().get_case(self.game.get_board().translate(end)).get_piece().can_be_promoted():
+                    t = self.ask_promote()
+                    self.game.promote(end, t)
+
                 break
 
     def ask_promote(self) -> str:
@@ -496,6 +554,11 @@ class Client:
                     if line == "OK" or not line:
                         break
                 self.finish_game("loose", False)
+                while True:
+                    line = self.file.readline().strip()
+                    if line == "OK" or not line:
+                        break
+                self.finish_game("loose", False)
                 self.exit()
                 break
 
@@ -508,6 +571,7 @@ class Client:
                 print("Vous êtes en echec")
 
             if len(command) < 2:
+                print("Rentrez une lettre suivie d'un chiffre")
                 print("Rentrez une lettre suivie d'un chiffre")
                 continue
 
@@ -539,6 +603,9 @@ class Client:
 
 
     def next_turn(self):
+        """
+        allow to turn the game
+        """
         self.game.get_board().plateau_terminal()
         if self.game.current_color() == self.color.name:
             self.play()

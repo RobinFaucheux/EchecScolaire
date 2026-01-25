@@ -5,7 +5,7 @@ from .pieces.piece import Piece
 import time
 from .constant import TIMER, ONE_MINUTE_IN_SECONDS
 from copy import deepcopy
-
+from .color import Color
 
 class Game:
     """
@@ -155,9 +155,11 @@ class Game:
         else:
             return "BLACK"
 
-    def update_clock(self) -> None:
+    def update_clock(self) -> Color:
         """
         Updates the timer for the current player and checks if time ran out.
+
+        Return the winner in case the time runs out
         """
         now = time.time()
         elapsed = now - self.turn_start_time
@@ -172,10 +174,14 @@ class Game:
         if self.time_white <= 0:
             self.finish = True
             print("White ran out of time. Black wins.")
+            return Color.BLACK
 
         if self.time_black <= 0:
             self.finish = True
             print("Black ran out of time. White wins.")
+            return Color.WHITE
+        
+        return 
 
     def allowed_moves(self, position: str) -> list[str]:
         """
@@ -216,6 +222,9 @@ class Game:
             for v in l:
                 coords.append(v)
             return self.board.plateau_terminal(piece)
+        
+    def promote(self, pos : str, type : str) -> bool:
+        return self.board.promote(pos, type)
 
     def move(self, start: str, end: str) -> bool:
         """

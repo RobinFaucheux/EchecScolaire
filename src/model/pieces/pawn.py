@@ -2,6 +2,9 @@ from __future__ import annotations
 from ..color import Color
 from .piece import Piece
 from .queen import Queen
+from .bishop import Bishop
+from .knight import Knight
+from .rock import Rock
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -69,7 +72,7 @@ class Pawn(Piece):
                 piece = self.case.get_board().get_case(co).get_piece()
                 match vector:
                     case (-1, -1):
-                        if piece is not None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color() != self.color:
                             res.append(co)
                         continue
                     case (-1, 0):
@@ -81,7 +84,7 @@ class Pawn(Piece):
                             res.append(co)
                         continue
                     case (-1, 1):
-                        if piece is not None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color() != self.color:
                             res.append(co)
                         continue
         else:
@@ -89,7 +92,7 @@ class Pawn(Piece):
                 piece = self.case.get_board().get_case(co).get_piece()
                 match vector:
                     case (1, -1):
-                        if piece is not None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color() != self.color:
                             res.append(co)
                         continue
                     case (1, 0):
@@ -101,10 +104,29 @@ class Pawn(Piece):
                             res.append(co)
                         continue
                     case (1, 1):
-                        if piece is not None and piece.get_color != self.color:
+                        if piece is not None and piece.get_color() != self.color:
                             res.append(co)
                         continue
         return res
+    
+    def can_be_promoted(self):
+        target_row = 0 if self.color == Color.BLACK else self.case.get_board().height - 1
+        return self.case.get_pos()[0] == target_row
+    
+    def promote(self, type : str):
+        self.case.remove_piece()
+        match type:
+            case "q":
+                self.case.add_piece(Queen(self.color, self.case))
+            case "r":
+                self.case.add_piece(Rock(self.color, self.case))
+            case "b":
+                self.case.add_piece(Bishop(self.color, self.case))
+            case "k":
+                self.case.add_piece(Knight(self.color, self.case))
+        self.remove()
+        return True
+
 
     def move(self, case: Case) -> bool:
         """
@@ -121,32 +143,6 @@ class Pawn(Piece):
             bool: True if the move was successful, False otherwise.
         """
         if case.get_pos() in self.accessible_spots():
-
-            if self.color == Color.BLACK and case.get_pos()[0] == 0:
-                if case.get_piece() is not None:
-                    if case.get_piece().get_name() == "king":
-                        case.get_board().get_game().win()
-
-                    case.get_piece().remove()
-
-                self.case.remove_piece()
-                self.remove()
-                case.add_piece(Queen(Color.BLACK, case))
-                return True
-
-            if self.color == Color.WHITE and case.get_pos(
-            )[0] == self.case.get_board().height - 1:
-                if case.get_piece() is not None:
-                    if case.get_piece().get_name() == "king":
-                        case.get_board().get_game().win()
-
-                    case.get_piece().remove()
-
-                self.case.remove_piece()
-                self.remove()
-                case.add_piece(Queen(Color.WHITE, case))
-                return True
-
             self.case.remove_piece()
             if case.get_piece() is not None:
                 if case.get_piece().get_name() == "king":
