@@ -5,7 +5,7 @@ from .pieces.piece import Piece
 import time
 from .constant import TIMER, ONE_MINUTE_IN_SECONDS
 from copy import deepcopy
-
+from .color import Color
 
 class Game:
     """
@@ -41,6 +41,17 @@ class Game:
             Player: The player object at index pos.
         """
         return self.joueurs[pos]
+
+    def set_joueur(self, p : Player, nb : int):
+        """sets the player
+
+        Args:
+            p (Player): player
+        """
+        if nb == 1:
+            self.joueurs = [p, self.joueurs[1]]
+        else:
+            self.joueurs = [self.joueurs[0], p]
 
     def get_id_g(self) -> int:
         """
@@ -144,9 +155,11 @@ class Game:
         else:
             return "BLACK"
 
-    def update_clock(self) -> None:
+    def update_clock(self) -> Color:
         """
         Updates the timer for the current player and checks if time ran out.
+
+        Return the winner in case the time runs out
         """
         now = time.time()
         elapsed = now - self.turn_start_time
@@ -161,10 +174,14 @@ class Game:
         if self.time_white <= 0:
             self.finish = True
             print("White ran out of time. Black wins.")
+            return Color.BLACK
 
         if self.time_black <= 0:
             self.finish = True
             print("Black ran out of time. White wins.")
+            return Color.WHITE
+        
+        return 
 
     def allowed_moves(self, position: str) -> list[str]:
         """
@@ -205,6 +222,9 @@ class Game:
             for v in l:
                 coords.append(v)
             return self.board.plateau_terminal(piece)
+        
+    def promote(self, pos : str, type : str) -> bool:
+        return self.board.promote(pos, type)
 
     def move(self, start: str, end: str) -> bool:
         """
@@ -314,10 +334,8 @@ class Game:
                 piece = case.get_piece()
                 if piece is not None:
                     if piece.get_color().name == player_color:
-
                         for end_pos in piece.accessible_spots():
-                            if not self.king_in_check_after_move(
-                                    case.get_pos(), end_pos, player_color):
+                            if not self.king_in_check_after_move(case.get_pos(), end_pos, player_color):
                                 return True
         return False
 
@@ -346,8 +364,7 @@ class Game:
         Returns:
             bool: True if the player is stalemated.
         """
-        if not self.king_in_danger(player_color) and not self.has_legal_move(
-                player_color):
+        if not self.king_in_danger(player_color) and not self.has_legal_move(player_color):
             return True
         return False
 

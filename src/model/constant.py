@@ -1,3 +1,13 @@
+from dotenv import load_dotenv
+import os
+load_dotenv()
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_DRIVER = os.getenv("DB_DRIVER")
+TABLES =  ['PLAYER', 'PLAY', 'GAME', 'COUP']
+
 BACKGROUND_WHITE = "\033[47m"
 BACKGROUND_RED = "\033[41m"
 BACKGROUND_BLUE = "\033[48;2;88;137;169m"
@@ -38,6 +48,7 @@ PIECE_SYMBOLS = {
 TIMER = 10  # in minutes
 ONE_MINUTE_IN_SECONDS = 60
 COEFF_SENSIBILITE_ELO = 20
+REPLAY_TIMEOUT = 15.0
 
 WIDHT_BOARD = 8
 HEIGHT_BOARD = 8

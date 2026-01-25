@@ -21,12 +21,31 @@ def register_player(connexion: sqlalchemy.Connection, username: str,
         int: The ID of the newly created player.
     """
     stmt = sqlalchemy.text(
-        "insert into PLAYER(pseudo, passwd) VALUES (:pseudo, :passwd) returning idP"
+        "INSERT INTO PLAYER(pseudo, passwd) VALUES (:pseudo, :passwd)"
     )
-    res = connexion.execute(stmt, {"pseudo": username, "passwd": password})
+    connexion.execute(stmt, {"pseudo": username, "passwd": password})
     connexion.commit()
+    res = connexion.execute(sqlalchemy.text("SELECT LAST_INSERT_ID()"))
     row = res.fetchone()
     return row[0] if row else None
+
+
+def connect_player(connexion: sqlalchemy.Connection, nom: str) -> Row:
+    """
+    Retrieves a player's data from the database by ID.
+
+    Args:
+        connexion (sqlalchemy.Connection): Database connection object.
+        id (int): The ID of the player to retrieve.
+
+    Returns:
+        Row: The database row containing player data, or None if not found.
+    """
+    stmt = sqlalchemy.text(
+        "select idP, pseudo, passwd, elo from PLAYER where pseudo = :nom")
+    res = connexion.execute(stmt, {"nom": nom})
+    row = res.fetchone()
+    return row if row else None
 
 
 def collect_player(connexion: sqlalchemy.Connection, id: int) -> Row:
@@ -59,10 +78,11 @@ def save_game(connexion: sqlalchemy.Connection) -> int:
     """
     today = date.today()
     stmt = sqlalchemy.text(
-        "insert into GAME(dateG, stateG) VALUES (:dateG, :stateG) returning idG"
+        "INSERT INTO GAME(dateG, stateG) VALUES (:dateG, :stateG)"
     )
-    res = connexion.execute(stmt, {"dateG": today, "stateG": "in progress"})
+    connexion.execute(stmt, {"dateG": today, "stateG": "in progress"})
     connexion.commit()
+    res = connexion.execute(sqlalchemy.text("SELECT LAST_INSERT_ID()"))
     row = res.fetchone()
     return row[0] if row else None
 
