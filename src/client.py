@@ -51,23 +51,49 @@ class Client:
     def connection_player(self):
         player_co = False
         print("1. Se connecter \n" \
-              "2. S'inscrire")
+              "2. S'inscrire \n" \
+              "3. Quitter")
         commande = input().strip()
         match commande:
             case "1":
-                name  = input ("nom :")
-                mdp = input("mot de passe : ")
-                self.send(f'connect {name} {mdp}')
-                rep = self.file.readline().strip()
-                if rep == "OK":
-                    player_co = True
+                try :
+                    name = ''
+                    mdp = ''
+                    while (name == '' or mdp == ''):    
+                        name  = input ("nom :")
+                        mdp = input("mot de passe : ")
+                        self.send(f'connect {name} {mdp}')
+                        rep = self.file.readline().strip()
+                        if rep == "OK":
+                            player_co = True
+                        else :
+                            print('Erreur de connexion')
+                except :
+                    print("Erreur")
             case "2":
-                name  = input ("nom :")
-                mdp = input("mot de passe : ")
-                self.send(f'register {name} {mdp}')
-                rep = self.file.readline().strip()
-                if rep == "OK":
-                    player_co = True
+                try :
+                    name = ''
+                    mdp = ''
+                    while (name == '' or mdp == ''):
+                        name  = input ("nom :")
+                        mdp = input("mot de passe : ")
+                        self.send(f'register {name} {mdp}')
+                        rep = self.file.readline().strip()
+                        if rep == "OK":
+                            player_co = True
+                        else:
+                            print("Erreur d'inscription")
+                except:
+                    print("Erreur")
+            case "3":
+                try :
+                    self.send("quit")
+                    rep = self.file.readline().strip()
+                    if rep == "OK":
+                        self.exit()
+                        return None
+                except:
+                    print("Erreur")
             case _:
                 print("Veuillez entrer un nom/mdp correct")
         return player_co
@@ -113,11 +139,13 @@ class Client:
                     self.connection_to_server()
 
                 if not player_co:
-                    while not player_co:
+                    while player_co is False:
                         player_co = self.connection_player()
+                if player_co is not None:
                     print("Connexion réussie\nBienvenue !")
-
-                ready = self.menu_before_game()
+                    ready = self.menu_before_game()
+                else : 
+                    ready = True
             except:
                 print("Veuillez entrer des valeurs correcte")
 

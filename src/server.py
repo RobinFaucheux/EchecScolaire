@@ -189,14 +189,20 @@ class PlayerConnexion(Thread):
 
         match response:
             case "register":
-                nomJ = args[0]
-                mdpJ = args[1]
-                self.register(nomJ, mdpJ)
+                try:
+                    nomJ = args[0]
+                    mdpJ = args[1]
+                    self.register(nomJ, mdpJ)
+                except:
+                    self.send('ERR')
 
             case "connect":
-                nomJ = args[0]
-                mdpJ = args[1]
-                self.connect(nomJ, mdpJ)
+                try:
+                    nomJ = args[0]
+                    mdpJ = args[1]
+                    self.connect(nomJ, mdpJ)
+                except:
+                    self.send('ERR')
 
             case "list_games":
                 try:
