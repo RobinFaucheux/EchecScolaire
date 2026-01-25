@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" version="29.2.7">
   <diagram name="Page-1" id="ue2nzu8fp39hdbNQRuWm">
-    <mxGraphModel dx="1046" dy="824" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1830" dy="1443" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -220,10 +220,10 @@
             <mxPoint x="610" y="410" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="_vj-o0teQn7O_933QG1c-3" edge="1" parent="1" source="S0ea2ZYKpIamfI4VXVso-8" style="endArrow=open;endFill=1;endSize=12;html=1;rounded=0;exitX=0.596;exitY=1.011;exitDx=0;exitDy=0;exitPerimeter=0;" target="S0ea2ZYKpIamfI4VXVso-4" value="">
+        <mxCell id="_vj-o0teQn7O_933QG1c-3" edge="1" parent="1" source="S0ea2ZYKpIamfI4VXVso-8" style="endArrow=open;endFill=1;endSize=12;html=1;rounded=0;exitX=0.596;exitY=1.011;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.008;entryY=0.109;entryDx=0;entryDy=0;entryPerimeter=0;" target="S0ea2ZYKpIamfI4VXVso-4" value="">
           <mxGeometry relative="1" width="160" as="geometry">
             <Array as="points">
-              <mxPoint x="1027" y="463" />
+              <mxPoint x="1027" y="433" />
             </Array>
             <mxPoint x="138" y="248" as="sourcePoint" />
             <mxPoint x="140" y="168" as="targetPoint" />
@@ -254,10 +254,10 @@
           <mxGeometry height="29" width="20" x="480" y="338" as="geometry" />
         </mxCell>
         <mxCell id="_vj-o0teQn7O_933QG1c-13" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="-players" vertex="1">
-          <mxGeometry height="25" width="46" x="858" y="427" as="geometry" />
+          <mxGeometry height="25" width="46" x="858" y="412" as="geometry" />
         </mxCell>
         <mxCell id="_vj-o0teQn7O_933QG1c-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="2" vertex="1">
-          <mxGeometry height="29" width="30" x="863" y="468" as="geometry" />
+          <mxGeometry height="29" width="30" x="863" y="432" as="geometry" />
         </mxCell>
         <mxCell id="_vj-o0teQn7O_933QG1c-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="-board" vertex="1">
           <mxGeometry height="10" width="60" x="667" y="131" as="geometry" />
@@ -321,6 +321,69 @@
         </mxCell>
         <mxCell id="ELO2I6QW-jnMvuvf7dof-8" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="0.1" vertex="1">
           <mxGeometry height="10" width="30" x="1156" y="178" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-9" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Serveur" vertex="1">
+          <mxGeometry height="220" width="279" x="1575" y="543" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-10" parent="ELO2I6QW-jnMvuvf7dof-9" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- counter : int&lt;div&gt;- connection : Connection&lt;/div&gt;&lt;div&gt;- matchmaking_queue : List&lt;/div&gt;&lt;div&gt;- sock : Socket&lt;/div&gt;&lt;div&gt;- lst_thread_players : List&lt;/div&gt;&lt;div&gt;&amp;nbsp;- verrou : Lock&lt;/div&gt;" vertex="1">
+          <mxGeometry height="93" width="279" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-11" parent="ELO2I6QW-jnMvuvf7dof-9" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="18" width="279" y="119" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-12" parent="ELO2I6QW-jnMvuvf7dof-9" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="&lt;div&gt;+ __init__(self,connection : Connection)&lt;/div&gt;&lt;div&gt;+ main_server(self, port : int)&lt;/div&gt;&lt;div&gt;+ new(self, cli1 : Session)&lt;/div&gt;&lt;div&gt;+ handle_lobby(self,cli : Session)&lt;/div&gt;&lt;div&gt;+ remove_player_thread(self, player : Player)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="83" width="279" y="137" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-13" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="PlayerConnexion" vertex="1">
+          <mxGeometry height="245" width="279" x="1267" y="543" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-14" parent="ELO2I6QW-jnMvuvf7dof-13" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- server : Server&lt;div&gt;- sock : Socket&lt;/div&gt;&lt;div&gt;- file : TextIOWrapper&lt;/div&gt;&lt;div&gt;- connection : Connection&lt;/div&gt;&lt;div&gt;- ready : bool&lt;/div&gt;&lt;div&gt;- connected : bool&lt;/div&gt;" vertex="1">
+          <mxGeometry height="93" width="279" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-15" parent="ELO2I6QW-jnMvuvf7dof-13" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="18" width="279" y="119" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-16" parent="ELO2I6QW-jnMvuvf7dof-13" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="&lt;div&gt;+ __init__(self, sock, connection, server)&lt;/div&gt;&lt;div&gt;+ send(self, message ; str)&lt;/div&gt;&lt;div&gt;+ connect(self, name : str, passwd : str)&lt;/div&gt;&lt;div&gt;+ register(self, name: str, passwd : str)&lt;/div&gt;&lt;div&gt;+ get_historical(self, player : Player) : str&lt;/div&gt;&lt;div&gt;+ get_list_players(self) : str&lt;/div&gt;&lt;div&gt;+ receive(self)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="108" width="279" y="137" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-17" edge="1" parent="1" source="ELO2I6QW-jnMvuvf7dof-13" style="endArrow=open;endFill=1;endSize=12;html=1;rounded=0;exitX=0;exitY=0.068;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.011;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;" target="S0ea2ZYKpIamfI4VXVso-4" value="">
+          <mxGeometry relative="1" width="160" as="geometry">
+            <Array as="points">
+              <mxPoint x="1094" y="526" />
+            </Array>
+            <mxPoint x="1037" y="399" as="sourcePoint" />
+            <mxPoint x="858" y="446" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-18" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="-player" vertex="1">
+          <mxGeometry height="25" width="46" x="876" y="456" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-19" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="29" width="30" x="873" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-21" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="ServeurGame" vertex="1">
+          <mxGeometry height="308" width="279" x="1575" y="65.5" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-22" parent="ELO2I6QW-jnMvuvf7dof-21" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="&lt;div&gt;- socket1 : Socket&lt;/div&gt;&lt;div&gt;- socket2 : Socket&lt;/div&gt;&lt;div&gt;- connection : Connection&lt;/div&gt;&lt;div&gt;- piece_player : bool&lt;/div&gt;&lt;div&gt;- replay_count : List&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="279" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-23" parent="ELO2I6QW-jnMvuvf7dof-21" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="18" width="279" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-24" parent="ELO2I6QW-jnMvuvf7dof-21" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="&lt;div&gt;+ __init__(self,serveur: Serveur, sock1 : Socket, sock2 : Socket,connection : Connection, player1 :Player, player2 : Player)&lt;/div&gt;&lt;div&gt;+ new(self, session : Session)&lt;/div&gt;&lt;div&gt;+ movePiece(self,start : str,end:str, color : Color)&lt;/div&gt;&lt;div&gt;+ abandon(self, color : Color)&lt;/div&gt;&lt;div&gt;+ replay(self, color:Color)&lt;/div&gt;&lt;div&gt;+ next(self)&lt;/div&gt;&lt;div&gt;+ end_game(self, status_player_1 : str, status_player_2 : str)&lt;/div&gt;&lt;div&gt;+ next_turn(self)&lt;/div&gt;&lt;div&gt;+ mainGameServer(self)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="184" width="279" y="124" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-25" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Session" vertex="1">
+          <mxGeometry height="368" width="279" x="1267" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-26" parent="ELO2I6QW-jnMvuvf7dof-25" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- connection : Connection&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- sock : Socket&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- file : TextIOWrapper&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- opened : bool&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="69" width="279" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-27" parent="ELO2I6QW-jnMvuvf7dof-25" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="18" width="279" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ELO2I6QW-jnMvuvf7dof-28" parent="ELO2I6QW-jnMvuvf7dof-25" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="&lt;div&gt;+ __init__(self, serveur : Server, sock : Socket, connection : connection,&amp;nbsp; id_game : int, player : Player, adversary : Player, color : Color, serverGame : ServerGame)&lt;/div&gt;&lt;div&gt;+ format_time(self, seconds : float) : str&lt;/div&gt;&lt;div&gt;+ send(self,message : str)&lt;/div&gt;&lt;div&gt;+ connect(self, name:str, passwd:str)&lt;/div&gt;&lt;div&gt;+ register(self, name: str,passwd: str)&lt;/div&gt;&lt;div&gt;+ start(self, color:Color)&lt;/div&gt;&lt;div&gt;+ send_adversary_move(self,start:str, end:str)&lt;/div&gt;&lt;div&gt;+ win(self)&lt;/div&gt;&lt;div&gt;+ loose(self)&lt;/div&gt;&lt;div&gt;+ draw(self)&lt;/div&gt;&lt;div&gt;+ exit(self)&lt;/div&gt;&lt;div&gt;+ receive(self)&lt;/div&gt;&lt;div&gt;+ disconnect(self)&lt;/div&gt;&lt;div&gt;+ ask_input(self, prompt :str) :str&lt;/div&gt;" vertex="1">
+          <mxGeometry height="255" width="279" y="113" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
