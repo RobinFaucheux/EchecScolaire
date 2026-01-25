@@ -118,11 +118,16 @@ class ChessGUI:
         board[0] = [('R', 'BLACK'), ('N', 'BLACK'), ('B', 'BLACK'), ('Q', 'BLACK'),
                     ('K', 'BLACK'), ('B', 'BLACK'), ('N', 'BLACK'), ('R', 'BLACK')]
         board[1] = [('P', 'BLACK') for _ in range(8)]
-        
         # Ligne 7 : pièces blanches
         board[7] = [('R', 'WHITE'), ('N', 'WHITE'), ('B', 'WHITE'), ('Q', 'WHITE'),
                     ('K', 'WHITE'), ('B', 'WHITE'), ('N', 'WHITE'), ('R', 'WHITE')]
         board[6] = [('P', 'WHITE') for _ in range(8)]
+        # Correction :
+        # Colonne 0: Tour, 1: Cavalier, 2: Fou, 3: Reine, 4: Roi, 5: Fou, 6: Cavalier, 7: Tour
+        board[0] = [('R', 'BLACK'), ('N', 'BLACK'), ('B', 'BLACK'), ('Q', 'BLACK'),
+                    ('K', 'BLACK'), ('B', 'BLACK'), ('N', 'BLACK'), ('R', 'BLACK')]
+        board[7] = [('R', 'WHITE'), ('N', 'WHITE'), ('B', 'WHITE'), ('Q', 'WHITE'),
+                    ('K', 'WHITE'), ('B', 'WHITE'), ('N', 'WHITE'), ('R', 'WHITE')]
         
         return board
     

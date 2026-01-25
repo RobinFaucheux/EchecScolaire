@@ -199,21 +199,8 @@ class Client:
             message (str): The message to send.
         """
         try:
-            if message.startswith("sync"):
-                # Envoi explicite de la clé de session
-                if hasattr(self, 'file') and hasattr(self, 'sock') and hasattr(self, 'session_key'):
-                    self.file.write(f"sync {self.session_key.hex()}\n")
-                    self.file.flush()
-                    rep = self.file.readline().strip()
-                    print(rep)
-                    return
             self.file.write(message + "\n")
             self.file.flush()
-            rep = self.file.readline().strip()
-            if rep.startswith("ERR"):
-                print(rep)
-            elif rep != "OK":
-                print(rep)
         except Exception:
             pass
     
