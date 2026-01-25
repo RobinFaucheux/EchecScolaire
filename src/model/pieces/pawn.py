@@ -111,12 +111,9 @@ class Pawn(Piece):
     
     def can_be_promoted(self):
         target_row = 0 if self.color == Color.BLACK else self.case.get_board().height - 1
-        print('target : ', target_row)
-        print('current : ', self.case.get_pos()[0])
         return self.case.get_pos()[0] == target_row
     
     def promote(self, type : str):
-        print('aaaaaa')
         self.case.remove_piece()
         match type:
             case "q":

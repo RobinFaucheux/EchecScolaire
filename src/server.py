@@ -67,11 +67,26 @@ class Serveur:
                 pass
             sys.exit()
     
-    def new(self, cli1):
-        fake_pc = PlayerConnexion(cli1.socket, self.connection, self)
-        with self.verrou:
-            self.matchmaking_queue.append((cli1.socket, fake_pc))
-        print(f"Joueur {fake_pc.player.get_pseudo()} en attente d'une partie")
+    def new(self, cli, player):
+        try:
+            real_pc = None
+            with self.verrou:
+                threads_to_test = list(self.lst_thread_players)
+            for pc in threads_to_test:
+                if pc.player.get_id() == player.get_id():
+                    real_pc = pc
+            with self.verrou:
+                self.matchmaking_queue.append((cli, real_pc))
+                print(f"Joueur {real_pc.player.get_pseudo()} en attente d'une partie")
+            with self.verrou:
+                if len(self.matchmaking_queue) >= 2:
+                    p1_cli, p1_pc = self.matchmaking_queue.pop(0)
+                    p2_cli, p2_pc = self.matchmaking_queue.pop(0)
+                    servGame = ServerGame(self, p1_cli, p2_cli, self.connection, p1_pc.player, p2_pc.player)
+                    t = Thread(target=servGame.mainGameServer)
+                    t.start()
+        except Exception as e:
+            print(f"erreur : {e}")
 
     def handle_lobby(self, cli):
         pc = PlayerConnexion(cli, self.connection, self)
@@ -95,13 +110,17 @@ class Serveur:
     def remove_player_thread(self, player):
         with self.verrou:
             if player in self.lst_thread_players: 
-                if player.player != None:
-                    print(f"Joueur {player.player.get_pseudo()} déconnecté")
-                    self.lst_thread_players.remove(player)
+                if player.player is not None:
+                    pseudo = player.player.get_pseudo() 
+                else:
+                    pseudo = "Anonyme"
+                print(f"Joueur {pseudo} déconnecté")
+                self.lst_thread_players.remove(player)
 
 
 class PlayerConnexion(Thread):
     def __init__(self, sock, connection, server):
+        Thread.__init__(self)
         self.server = server
         self.sock = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
@@ -246,6 +265,8 @@ class ServerGame:
         self.connection = connection
         self.piece_played = False
         self.replay_count = [] 
+        self.player1 = player1
+        self.player2 = player2
         try:
             id_game = queries.save_game(self.connection)
         except Exception:
@@ -259,8 +280,11 @@ class ServerGame:
         self.game = Game(id_game, player1, player2)
 
 
-    def new(self, session):
-        self.serveur.new(session)
+    def new(self, player):
+        if player.get_id() == self.player1.get_id():
+            self.serveur.new(self.socket1, self.player1)
+        else:
+            self.serveur.new(self.socket2, self.player2)
 
     def promote(self, type) -> bool:
         if self.game.get_board().get_case(self.game.get_board().translate(self.promotable_piece)).get_piece().get_color() == Color.WHITE:
@@ -374,17 +398,7 @@ class ServerGame:
             self.sess2.draw()
             self.end_game("equality", "equality")
     
-        winner = self.game.update_clock()
-        if winner is not None:
-            self.game.set_finish()
-            if winner == Color.WHITE:
-                self.sess1.win()
-                self.sess2.loose()
-                self.end_game('won', 'loose')
-            else:
-                self.sess1.loose()
-                self.sess2.win()
-                self.end_game('loose', 'won')
+        self.game.update_clock()
         self.game.set_turn(self.game.get_turn() + 1)
 
 
@@ -398,8 +412,14 @@ class ServerGame:
     def mainGameServer(self):
         self.sess1.start('w')
         self.sess2.start('b')
+        self.sess1.game = self.game
+        self.sess1.board = self.game.get_board()
+        self.sess2.game = self.game
+        self.sess2.board = self.game.get_board()
         while self.sess1.opened and self.sess2.opened:
-            self.current_player.receive()
+            result = self.current_player.receive()
+            if not result:
+                break
             if not self.game.get_finish():
                 if self.piece_played:
                     self.next_turn()
@@ -423,10 +443,10 @@ class Session:
         self.server = serveur
         self.socket = sock
         self.file = sock.makefile(mode="rw", encoding="utf-8")
-        player1 = player
-        player2 = adversary
+        self.player1 = player
+        self.player2 = adversary
         self.serverGame = serverGame
-        self.game = Game(id_game, player1, player2)
+        self.game = Game(id_game, self.player1, self.player2)
         self.board = self.game.get_board()
         self.opened = True
         self.color = color
@@ -528,10 +548,10 @@ class Session:
             case "leave":
                 try :
                     self.serverGame.abandon(self.color)
-                    return
+                    return True
                 except:
                     self.send('ERR')
-                    return
+                    return True
             case "quit":
                 try :
                     self.send('OK')
@@ -541,14 +561,17 @@ class Session:
             case "replay":
                 try:
                     self.serverGame.replay(self.color)
-                    return
+                    return True
                 except:
                     self.send('ERR')
             case "new":
                 try:
-                    self.serverGame.new(self)
+                    self.send('OK')
+                    self.serverGame.new(self.player1)
+                    return False
                 except:
-                    pass
+                    self.send("ERR")
+                    return False
             case "promote":
                 try:
                     r = self.serverGame.promote(args[0])
@@ -560,6 +583,7 @@ class Session:
                     pass
             case _:
                 self.send('ERR')
+        return True
 
     def disconnect(self):
         self.file.close()
