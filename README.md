@@ -1,4 +1,5 @@
 # EchecScolaire
+![image](src/img/logo.png)
 
 install modules : 
 ` pip install -r requirements.txt`
