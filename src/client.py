@@ -1,8 +1,10 @@
 import socket
 from model.color import Color
 from model.game import Game
+from model.constant import REPLAY_TIMEOUT
 from colorama import init
 import json
+import select
 
 init()
 
@@ -149,23 +151,38 @@ class Client:
             except:
                 print("Veuillez entrer des valeurs correcte")
 
-    def replay_prompt(self):
+    def replay_prompt(self, can_rematch = True):
         rep_ok = False
         while not rep_ok:
             try :
-                print("Voulez-vous rejouer contre la meme personne ?")
-                print("1. relancer contre la meme personne \n" \
-                "2. relancer contre une autre personne \n"
-                "3. Quitter")
-                rep = input().strip()
+                if can_rematch:
+                    print("Voulez-vous rejouer contre la meme personne ?")
+                    print("1. relancer contre la meme personne \n" \
+                    "2. relancer contre une autre personne \n"
+                    "3. Quitter")
+                    rep = input().strip()
 
-                match rep:
-                    case "1":
-                        self.replay_same()
-                    case "2":
-                        self.replay_other()
-                    case _:
-                        self.exit()
+                    match rep:
+                        case "1":
+                            rep_ok = True
+                            self.replay_same()
+                        case "2":
+                            rep_ok = True
+                            self.replay_other()
+                        case _:
+                            self.exit()
+                else :
+                    print("Que voulez-vous faire ?")
+                    print("1. Relancer une partie \n"
+                          "2. Quitter")
+                    rep = input().strip()
+
+                    match rep:
+                        case "1":
+                            rep_ok = True
+                            self.replay_other()
+                        case _:
+                            self.exit()
             except:
                 pass
 
@@ -177,7 +194,12 @@ class Client:
     def replay_same(self):
         self.send("replay")
         print("En attente de l'autre joueur")
-        self.receive()
+        ready = select.select([self.sock], [], [], REPLAY_TIMEOUT)
+        if ready[0]:
+            self.receive()
+        else:
+            print("Replay refuse ou expire")
+            self.replay_prompt(False)
 
     def send(self, message):
         """
@@ -201,7 +223,7 @@ class Client:
             print('Egalite')
         self.game = None
         if rematch:
-            self.demander_rematch()
+            self.replay_prompt()
 
     def exit(self):
         self.quit = True
