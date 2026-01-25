@@ -164,18 +164,18 @@ class Serveur:
 
 class PlayerConnexion(Thread):
     def __init__(self, sock, connection, server : Serveur):
-    """
-    Manages a single player's connection and communication in a separate thread.
-    
-    Attributes:
-        server: The main server instance.
-        sock: The client's socket.
-        file: A file-like object for reading and writing data (UTF-8).
-        player: The player data associated with this connection.
-        connection: The database or network connection object.
-        ready: Boolean to track if the player is ready to play.
-        connected: Boolean to track if the player is currently online.
-    """
+        """
+        Manages a single player's connection and communication in a separate thread.
+        
+        Attributes:
+            server: The main server instance.
+            sock: The client's socket.
+            file: A file-like object for reading and writing data (UTF-8).
+            player: The player data associated with this connection.
+            connection: The database or network connection object.
+            ready: Boolean to track if the player is ready to play.
+            connected: Boolean to track if the player is currently online.
+        """
         Thread.__init__(self)
         self.server = server
         self.sock = sock
@@ -401,23 +401,23 @@ class PlayerConnexion(Thread):
 
 class ServerGame:
     def __init__(self, serveur : Serveur, sock1, sock2, connection, player1, player2, final_key_1, final_key_2):
-    """
-    Manages a live chess match between two players.
+        """
+        Manages a live chess match between two players.
 
-    This class synchronizes the game logic, the two player sessions (sockets), 
-    and the database storage.
+        This class synchronizes the game logic, the two player sessions (sockets), 
+        and the database storage.
 
-    Attributes:
-        serveur: Reference to the main Server instance.
-        socket1 / socket2: Communication sockets for both players.
-        connection: Database connection to save match results.
-        player1 / player2: Player data objects.
-        game: The core chess logic instance (rules, board state).
-        sess1 / sess2: Individual session handlers for each player.
-        current_player: The session of the player whose turn it is.
-        current_color: The color (White/Black) currently moving.
-        replay_count (list): Tracks votes to restart the game.
-    """
+        Attributes:
+            serveur: Reference to the main Server instance.
+            socket1 / socket2: Communication sockets for both players.
+            connection: Database connection to save match results.
+            player1 / player2: Player data objects.
+            game: The core chess logic instance (rules, board state).
+            sess1 / sess2: Individual session handlers for each player.
+            current_player: The session of the player whose turn it is.
+            current_color: The color (White/Black) currently moving.
+            replay_count (list): Tracks votes to restart the game.
+        """
         self.serveur = serveur
         self.socket1 = sock1
         self.socket2 = sock2

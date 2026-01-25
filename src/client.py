@@ -211,7 +211,7 @@ class Client:
 
 
     def send(self, message, encrypted=True):
-              """
+        """
         Sends a message to the client through the socket.
         """
         try:
@@ -252,7 +252,7 @@ class Client:
         """
         allow to receive the message of server
         """
-         rep = self.decrypt_msg(self.file.readline().strip()).split('#')
+        rep = self.decrypt_msg(self.file.readline().strip()).split('#')
         response = rep[0]
         args = rep[1:]
         
